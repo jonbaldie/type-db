@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace TypeDb;
 
+use PDO;
+
 /**
  * @param string|float|int|null $value
  * @return SqlValue\SqlValue
@@ -75,7 +77,7 @@ function quick_query(
     );
 
     // 3. interpret result
-    $results = $statement->fetchAll();
+    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
     // 4. turn result values into SqlValue objects
     $return = array_map(
