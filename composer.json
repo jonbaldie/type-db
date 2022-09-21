@@ -1,0 +1,23 @@
+{
+    "name": "jonbaldie/type-db",
+    "description": "Type-safe database connector for PHP.",
+    "type": "library",
+    "require-dev": {
+        "phpstan/phpstan": "^1.8",
+        "rskuipers/php-assumptions": "^0.8.1",
+        "phpunit/phpunit": "^9.5",
+        "squizlabs/php_codesniffer": "^3.7"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jonathan Baldie",
+            "email": "jon@jonbaldie.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": { "TypeDb\\": "src/" },
+        "files": ["src/helpers.php"]
+    },
+    "require": {}
+}
