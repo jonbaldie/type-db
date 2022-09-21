@@ -9,7 +9,11 @@ class FeatureTest extends \PHPUnit\Framework\TestCase
      */
     public function it_fetches_existing_data()
     {
-        $pdo = new \PDO('sqlite::memory:');
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
 
         $pdo->prepare('create table if not exists type_db_ft ( id int not null, value varchar not null )')->execute();
 
