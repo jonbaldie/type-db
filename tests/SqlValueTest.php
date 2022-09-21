@@ -38,6 +38,39 @@ class SqlValueTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     * @dataProvider strings
+     */
+    public function it_interprets_strings(string $string)
+    {
+        $value = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlString($string));
+
+        $this->assertIsString($value);
+    }
+
+    /**
+     * @test
+     * @dataProvider floats
+     */
+    public function it_interprets_floats(float $float)
+    {
+        $value = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlFloat($float));
+
+        $this->assertIsFloat($value);
+    }
+
+    /**
+     * @test
+     * @dataProvider integers
+     */
+    public function it_interprets_integers(int $integer)
+    {
+        $value = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlInteger($integer));
+
+        $this->assertIsInt($value);
+    }
+
+    /**
      * @dataProvider
      */
     public function strings(): array
