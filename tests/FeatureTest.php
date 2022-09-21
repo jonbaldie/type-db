@@ -7,7 +7,7 @@ class FeatureTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
-    public function it_fetches_existing_data()
+    public function it_writes_and_fetches_data()
     {
         try {
             $pdo = new \PDO('sqlite::memory:');
@@ -15,12 +15,34 @@ class FeatureTest extends \PHPUnit\Framework\TestCase
             $this->markTestSkipped($error->getMessage());
         }
 
-        $pdo->prepare('create table if not exists type_db_ft ( id int not null, value varchar not null )')->execute();
+        $connection = new \TypeDb\Connection($pdo);
 
-        $pdo->prepare('insert into type_db_ft (id, value) values (?, ?), (?, ?)')->execute([1, 'bar', 2, 'baz']);
+        \TypeDb\quick_query(
+            $connection,
+            'create table if not exists type_db_ft ( id int not null, value varchar not null )',
+            []
+        );
+
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_ft (id, value) values (?, ?), (?, ?)',
+            [\TypeDb\to_sql(1), \TypeDb\to_sql('bar'), \TypeDb\to_sql(2), \TypeDb\to_sql('baz')]
+        );
+
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_ft (id, value) values (?, ?), (?, ?)',
+            [\TypeDb\to_sql(3), \TypeDb\to_sql('jar'), \TypeDb\to_sql(4), \TypeDb\to_sql('jaz')]
+        );
+
+        \TypeDb\quick_query(
+            $connection,
+            'delete from type_db_ft where id in (?, ?)',
+            [\TypeDb\to_sql(3), \TypeDb\to_sql(4)]
+        );
 
         $result = \TypeDb\quick_query(
-            new \TypeDb\Connection($pdo),
+            $connection,
             "select * from type_db_ft where id = ? or value = ?",
             [\TypeDb\to_sql(1), \TypeDb\to_sql('baz')]
         );
