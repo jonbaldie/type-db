@@ -11,14 +11,14 @@ class FeatureTest extends \PHPUnit\Framework\TestCase
     {
         $pdo = new \PDO('sqlite::memory:');
 
-		$pdo->prepare('create table if not exists type_db_ft ( id int not null, value varchar not null )')->execute();
+        $pdo->prepare('create table if not exists type_db_ft ( id int not null, value varchar not null )')->execute();
 
-		$pdo->prepare('insert into type_db_ft (id, value) values (?, ?), (?, ?)')->execute([1, 'bar', 2, 'baz']);
+        $pdo->prepare('insert into type_db_ft (id, value) values (?, ?), (?, ?)')->execute([1, 'bar', 2, 'baz']);
 
-		$result = \TypeDb\quick_query(
-		    new \TypeDb\Connection($pdo),
-		    "select * from type_db_ft where id = ? or value = ?",
-		    [\TypeDb\to_sql(1), \TypeDb\to_sql('baz')]
+        $result = \TypeDb\quick_query(
+            new \TypeDb\Connection($pdo),
+            "select * from type_db_ft where id = ? or value = ?",
+            [\TypeDb\to_sql(1), \TypeDb\to_sql('baz')]
         );
 
         $expected = [
