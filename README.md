@@ -1,6 +1,6 @@
 - [ ] connection
-- [ ] SqlValue interface
-- [ ] toSql function
+- [x] SqlValue interface
+- [x] toSql function
 - [ ] unit tests
-- [ ] phpstan level 9
-- [ ] phpa
+- [x] phpstan level 9
+- [x] phpa
