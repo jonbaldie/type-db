@@ -142,7 +142,7 @@ $result looks like [
 
 ## Thanks
 
-I'm grateful for the handy Docker images provided by [thecodingmachine](https://github.com/thecodingmachine/docker-images-php). Setting up the `thecodingmachine/php:8.1-v4-cli` image in the CI pipeline for this library was a breeze. To enable the `pdo_sqlite` extension for the test suite, I only had to add one environment variable to the [CircleCI config file](./.circleci/config.yml).
+I'm grateful for the handy Docker images provided by [thecodingmachine](https://github.com/thecodingmachine/docker-images-php). Setting up the `thecodingmachine/php:8.1-v4-cli` image in the CI pipeline for this library was a breeze. To enable the `pdo_sqlite` extension for the test suite, I only had to add one environment variable to the [CircleCI config file](./.circleci/config.yml#L8).
 
 ## Roadmap
 
