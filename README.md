@@ -76,12 +76,16 @@ This helper takes an object of type `\TypeDb\SqlValue\SqlValue` and returns its 
 
 declare(strict_types=1);
 
+// This will return "foo bar"
 $string = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlString("foo bar"));
 
+// This will return 1.0
 $float = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlFloat(1.0));
 
+// This will return 1
 $integer = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlInteger(1));
 
+// This will return null
 $null = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlNull);
 ```
 
