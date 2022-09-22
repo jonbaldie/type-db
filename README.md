@@ -94,6 +94,8 @@ It takes three arguments: an object of type `\TypeDb\Connection`, your SQL query
 
 declare(strict_types=1);
 
+$connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
+
 \TypeDb\quick_query(
     $connection,
     'insert into type_db_ft (id, value) values (?, ?), (?, ?)',
@@ -107,6 +109,8 @@ The helper returns a nested list of objects of type `\TypeDb\SqlValue\SqlValue`.
 <?php
 
 declare(strict_types=1);
+
+$connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
 
 $result = \TypeDb\quick_query(
     $connection,
