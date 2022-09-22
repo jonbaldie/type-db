@@ -105,6 +105,8 @@ $connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
 
 The helper returns a nested list of objects of type `\TypeDb\SqlValue\SqlValue`. If that's confusing, the PHPDoc type is `\TypeDb\SqlValue\SqlValue[][]`.
 
+This happens automatically within the helper. The return types are automatically converted into `\TypeDb\SqlValue\SqlValue` objects for you!
+
 ```php
 <?php
 
