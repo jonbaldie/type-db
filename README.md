@@ -114,7 +114,7 @@ $connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
 
 $result = \TypeDb\quick_query(
     $connection,
-    "select * from type_db_ft where id = ? or value = ?",
+    "select id, value from type_db_ft where id = ? or value = ?",
     [\TypeDb\to_sql(1), \TypeDb\to_sql('baz')]
 );
 
