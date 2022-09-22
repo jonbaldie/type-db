@@ -18,7 +18,7 @@ This helper takes a value of type `string|float|int|null` as its sole argument a
 
 There is a class implementing `\TypeDb\SqlValue\SqlValue` for each of the four argument types that you can pass into the helper.
 
-You can grab the underlying value from each class by accessing the `public readonly` property of `$value`.
+You can grab the underlying value from each class by accessing the `public readonly` property named `$value`.
 
 ```php
 <?php
@@ -28,19 +28,19 @@ declare(strict_types=1);
 // 1. Return an object of type \TypeDb\SqlValue\SqlString
 $string = \TypeDb\to_sql("foo bar");
 
-// Grab the underlying string:
+// Grab the actual string we just passed in:
 $value = $string->value;
 
 // 2. Return an object of type \TypeDb\SqlValue\SqlFloat
 $float = \TypeDb\to_sql(1.0);
 
-// Grab the underlying float:
+// To get the actual float back:
 $value = $float->value;
 
 // 3. Return an object of type \TypeDb\SqlValue\SqlInteger
 $integer = \TypeDb\to_sql(1);
 
-// Grab the underlying integer:
+// To get the actual integer back:
 $value = $integer->value;
 
 // 4. Return an object of type \TypeDb\SqlValue\SqlNull
