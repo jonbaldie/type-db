@@ -8,6 +8,10 @@ Inspired by the HDBC package in Haskell, this library provides a series of class
 
 The connector works with any database driver compatible with the in-built PDO abstraction layer. That means you can use it with your SQLite3, MySQL (and MariaDB), and PostgreSQL databases with ease. 
 
+## Installation
+
+_A Composer package is in the works! Please check back very soon_
+
 The library requires PHP 8.1 as a minimum along with whichever PDO driver you need for your database. Once you have your `PDO` object instantiated, you're good to go!
 
 ## Usage
@@ -163,6 +167,8 @@ phase 2:
 
 phase 3: 
 
+- [ ] composer package
+- [ ] version
 - [ ] transactions
 - [ ] additional class-based usage
 - [ ] date types
