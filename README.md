@@ -83,6 +83,51 @@ $integer = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlInteger(1));
 $null = \TypeDb\from_sql(new \TypeDb\SqlValue\SqlNull);
 ```
 
+### \TypeDb\quick_query
+
+This helper wraps the `\TypeDb\Connection` class (itself a wrapper of `PDO`) to perform one-off queries.
+
+It takes three arguments: an object of type `\TypeDb\Connection`, your SQL query as a string, and a list of objects of type `\TypeDb\SqlValue\SqlValue`.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+\TypeDb\quick_query(
+    $connection,
+    'insert into type_db_ft (id, value) values (?, ?), (?, ?)',
+    [\TypeDb\to_sql(1), \TypeDb\to_sql('bar'), \TypeDb\to_sql(2), \TypeDb\to_sql('baz')]
+);
+```
+
+The helper returns a nested list of objects of type `\TypeDb\SqlValue\SqlValue`. If that's confusing, the PHPDoc type is `\TypeDb\SqlValue\SqlValue[][]`.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+$result = \TypeDb\quick_query(
+    $connection,
+    "select * from type_db_ft where id = ? or value = ?",
+    [\TypeDb\to_sql(1), \TypeDb\to_sql('baz')]
+);
+
+/*
+$result looks like [
+    [
+        'id' => new \TypeDb\SqlValue\SqlInteger(1),
+        'value' => new \TypeDb\SqlValue\SqlString('bar'),
+    ],
+    [
+        'id' => new \TypeDb\SqlValue\SqlInteger(2),
+        'value' => new \TypeDb\SqlValue\SqlString('baz'),
+    ],
+];
+*/
+```
+
 ## Roadmap
 
 phase 1:
