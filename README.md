@@ -169,8 +169,8 @@ phase 2:
 
 phase 3: 
 
-- [ ] composer package
-- [ ] version
+- [x] composer package
+- [x] version
 - [ ] transactions
 - [ ] additional class-based usage
 - [ ] date types

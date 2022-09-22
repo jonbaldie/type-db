@@ -65,7 +65,7 @@ function from_sql(
 function quick_query(
     Connection $conn,
     string $sql,
-    array $sql_values,
+    array $sql_values = [],
 ): array
 {
     // 1. prepare query
