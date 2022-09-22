@@ -1,0 +1,13 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: thecodingmachine/php:8.1-v4-cli
+    steps:
+      - run: git clone -b ${CIRCLE_BRANCH} https://github.com/jonbaldie/type-db.git && cd type-db && composer install --ignore-platform-reqs --no-interaction && ./vendor/bin/phpunit ./tests --testdox && ./vendor/bin/phpstan analyse && ./vendor/bin/phpa ./src
+
+workflows:
+  test:
+    jobs:
+      - test
