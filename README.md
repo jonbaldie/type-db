@@ -1,5 +1,7 @@
 # Type-safe database connector for PHP
 
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/jonbaldie/type-db/tree/main.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/jonbaldie/type-db/tree/main)
+
 This library provides a type-safe database connector for PHP. 
 
 Inspired by the HDBC package in Haskell, this library provides a series of classes and three helper functions to help make your database interaction more deterministic and testable.
