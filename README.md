@@ -45,6 +45,10 @@ declare(strict_types=1);
 $connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
 
 $connection->quickQuery(
+    'create table if not exists type_db_ft ( id int not null, value varchar not null )',
+);
+
+$connection->quickQuery(
     'insert into type_db_ft (id, value) values (?, ?), (?, ?)',
     [\TypeDb\to_sql(1), \TypeDb\to_sql('bar'), \TypeDb\to_sql(2), \TypeDb\to_sql('baz')]
 );
@@ -78,17 +82,17 @@ declare(strict_types=1);
 $connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
 
 $result = $connection->quickQuery(
-    "select 1, 'baz'"
+    "select 1 as id, 'baz' as value"
 );
 ```
 
-The structure of `$result` here will look like this (note the lack of associative array keys):
+The structure of `$result` here will look like this:
 
 ```php
 [
     [
-        0 => \TypeDb\SqlInteger<1>,
-        1 => \TypeDb\SqlString<'baz'>
+        'id' => \TypeDb\SqlInteger<1>,
+        'value' => \TypeDb\SqlString<'baz'>
     ]
 ]
 ```

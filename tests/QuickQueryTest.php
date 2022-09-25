@@ -105,4 +105,60 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals($expected, $result);
     }
+
+    /**
+     * @test
+     */
+    public function it_returns_non_associative_data()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $result = \TypeDb\quick_query(
+            $connection,
+            "select 1 as `0`, 'baz' as `1`",
+        );
+
+        $expected = [
+            [
+                0 => new \TypeDb\SqlValue\SqlInteger(1),
+                1 => new \TypeDb\SqlValue\SqlString('baz'),
+            ]
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_associative_data()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $result = \TypeDb\quick_query(
+            $connection,
+            "select 1 as id, 'baz' as value",
+        );
+
+        $expected = [
+            [
+                'id' => new \TypeDb\SqlValue\SqlInteger(1),
+                'value' => new \TypeDb\SqlValue\SqlString('baz'),
+            ]
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
 }
