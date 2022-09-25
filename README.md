@@ -4,6 +4,15 @@ This library provides a type-safe database connector for PHP.
 
 Inspired by the HDBC package in Haskell, this library provides a series of classes and three helper functions to help make your database interaction more deterministic and testable.
 
+Strings, floats, integers, and nulls are automatically converted to and from `SqlValue` objects, giving you more type-safe precision in your queries.
+
+- Strings are mapped to `SqlString<string>`
+- Floats are mapped to `SqlFloat<float>`
+- Integers are mapped to `SqlInteger<int>`
+- Finally, nulls are mapped to `SqlNull`
+
+Once you see how these types can be type-hinted throughout your codebase, you bolster your codebase's testability and precision.
+
 The connector works with any database driver compatible with the PDO abstraction layer. That means you can use it with your SQLite3, MySQL (and MariaDB), and PostgreSQL databases with ease. 
 
 ## Installation
@@ -17,6 +26,68 @@ The library requires PHP 8.1 as a minimum along with whichever PDO driver you ne
 ## Usage
 
 The test files inside `tests/` provide a range of example usages for you to peruse, but here is some documentation on how to use the library.
+
+### \TypeDb\Connection
+
+This class wraps the `PDO` class but adds the type-safe features that makes this library useful.
+
+Here is a simple way you can query your database:
+
+```
+<?php
+
+declare(strict_types=1);
+
+$connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
+
+$connection->quickQuery(
+    'insert into type_db_ft (id, value) values (?, ?), (?, ?)',
+    [\TypeDb\to_sql(1), \TypeDb\to_sql('bar'), \TypeDb\to_sql(2), \TypeDb\to_sql('baz')]
+);
+
+$result = $connection->queryQuery(
+    'select id, value from type_db_ft where id = ? or value = ?',
+    [\TypeDb\to_sql(1), \TypeDb\to_sql('baz')]
+);
+```
+
+This returns a nested list of objects of type `\TypeDb\SqlValue\SqlValue`. If that's confusing, the PHPDoc type is `\TypeDb\SqlValue\SqlValue[][]`.
+
+If it helps, `$result` in the above example looks like this:
+
+```php
+[
+    [
+        'id' => \TypeDb\SqlInteger<1>, 
+        'value' => \TypeDb\String<'baz'>
+    ]
+]
+```
+
+It works like this even for super simple queries with no prepared parameters.
+
+```
+<?php
+
+declare(strict_types=1);
+
+$connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
+
+$result = $connection->queryQuery(
+    "select 1, 'baz'"
+);
+```
+
+The structure of `$result` here will look like this (note the lack of associative array keys):
+
+```php
+[
+    [
+        0 => \TypeDb\SqlInteger<1>,
+        1 => \TypeDb\String<'baz'>
+    ]
+]
+```
 
 ### \TypeDb\to_sql
 
@@ -143,10 +214,6 @@ $result looks like [
 ];
 */
 ```
-
-## But why does type safety matter?
-
-@todo fill this in!
 
 ## Thanks
 
