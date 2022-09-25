@@ -225,6 +225,8 @@ If you're not precise about the types of the objects and variables passed around
 
 After many years of experience as a developer and fixing way too many errors, over those years, I learned that type precision and static analysis were the biggest game-changers for the stability of any codebase.
 
+While it can be painful to implement at first, a type-safe coding style makes your code more predictable, and therefore more testable. You know in advance what is actually going to happen, so you become better at testing that!
+
 ## Thanks
 
 I'm grateful for the handy Docker images provided by [thecodingmachine](https://github.com/thecodingmachine/docker-images-php). Setting up the `thecodingmachine/php:8.1-v4-cli` image in the CI pipeline for this library was a breeze. To enable the `pdo_sqlite` extension for the test suite, I only had to add one environment variable to the [CircleCI config file](./.circleci/config.yml#L8).
