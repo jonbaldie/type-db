@@ -4,7 +4,7 @@ This library provides a type-safe database connector for PHP.
 
 Inspired by the HDBC package in Haskell, this library provides a series of classes and three helper functions to help make your database interaction more deterministic and testable.
 
-The connector works with any database driver compatible with the in-built PDO abstraction layer. That means you can use it with your SQLite3, MySQL (and MariaDB), and PostgreSQL databases with ease. 
+The connector works with any database driver compatible with the PDO abstraction layer. That means you can use it with your SQLite3, MySQL (and MariaDB), and PostgreSQL databases with ease. 
 
 ## Installation
 
