@@ -33,7 +33,7 @@ This class wraps the `PDO` class but adds the type-safe features that makes this
 
 Here is a simple way you can query your database:
 
-```
+```php
 <?php
 
 declare(strict_types=1);
