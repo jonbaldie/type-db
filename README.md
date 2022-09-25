@@ -227,9 +227,7 @@ $result looks like [
 
 If you're not precise about the types of the objects and variables passed around in your application, then you're not clear about what your application actually does.
 
-After many years of experience as a developer and fixing way too many errors, over those years, I learned that type precision and static analysis were the biggest game-changers for the stability of any codebase.
-
-While it can be painful to implement at first, a type-safe coding style makes your code more predictable, and therefore more testable. You know in advance what is actually going to happen, so you become better at testing that!
+After many years of experience as a developer and fixing way too many errors, I learned that type precision and static analysis were the biggest game-changers for the stability of any codebase.
 
 ## Thanks
 
