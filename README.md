@@ -11,6 +11,8 @@ Strings, floats, integers, and nulls are automatically converted to and from `Sq
 - Integers are mapped to `SqlInteger<int>`
 - Finally, nulls are mapped to `SqlNull`
 
+All of these implement an `SqlValue` interface. 
+
 Once you see how these types can be type-hinted throughout your codebase, you bolster your codebase's testability and precision.
 
 The connector works with any database driver compatible with the PDO abstraction layer. That means you can use it with your SQLite3, MySQL (and MariaDB), and PostgreSQL databases with ease. 
@@ -59,7 +61,7 @@ If it helps, `$result` in the above example looks like this:
 [
     [
         'id' => \TypeDb\SqlInteger<1>, 
-        'value' => \TypeDb\String<'baz'>
+        'value' => \TypeDb\SqlString<'baz'>
     ]
 ]
 ```
@@ -84,7 +86,7 @@ The structure of `$result` here will look like this (note the lack of associativ
 [
     [
         0 => \TypeDb\SqlInteger<1>,
-        1 => \TypeDb\String<'baz'>
+        1 => \TypeDb\SqlString<'baz'>
     ]
 ]
 ```
