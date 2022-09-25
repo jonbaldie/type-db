@@ -47,7 +47,7 @@ $connection->quickQuery(
     [\TypeDb\to_sql(1), \TypeDb\to_sql('bar'), \TypeDb\to_sql(2), \TypeDb\to_sql('baz')]
 );
 
-$result = $connection->queryQuery(
+$result = $connection->quickQuery(
     'select id, value from type_db_ft where id = ? or value = ?',
     [\TypeDb\to_sql(1), \TypeDb\to_sql('baz')]
 );
@@ -75,7 +75,7 @@ declare(strict_types=1);
 
 $connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
 
-$result = $connection->queryQuery(
+$result = $connection->quickQuery(
     "select 1, 'baz'"
 );
 ```
