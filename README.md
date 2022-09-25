@@ -1,3 +1,5 @@
+# Type-safe database connector
+
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/jonbaldie/type-db/tree/main.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/jonbaldie/type-db/tree/main)
 
 This library provides a type-safe database connector for PHP. 
