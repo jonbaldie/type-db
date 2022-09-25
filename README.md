@@ -21,7 +21,7 @@ The connector works with any database driver compatible with the PDO abstraction
 
 ## Installation
 
-```
+```bash
 composer require jonbaldie/type-db
 ```
 
