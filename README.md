@@ -68,7 +68,7 @@ If it helps, `$result` in the above example looks like this:
 
 It works like this even for super simple queries with no prepared parameters.
 
-```
+```php
 <?php
 
 declare(strict_types=1);
@@ -216,6 +216,12 @@ $result looks like [
 ];
 */
 ```
+
+## But why does type safety matter?
+
+If you're not precise about the types of the objects and variables passed around in your application, then you're not clear about what your application actually does.
+
+After many years of experience as a developer and fixing way too many errors, over those years, I learned that type precision and static analysis were the biggest game-changers for the stability of any codebase.
 
 ## Thanks
 
