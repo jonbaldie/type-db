@@ -221,6 +221,8 @@ $result looks like [
 */
 ```
 
+If the underlying PDO connection is in `PDO::ERRMODE_SILENT`, `\TypeDb\quick_query()` still fails deterministically when `prepare()` or `execute()` fails. In those cases it throws a `\RuntimeException` containing the PDO SQLSTATE, driver error code/message, and the SQL string, instead of returning an empty result.
+
 ## But why does type safety matter?
 
 If you're not precise about the types of the objects and variables passed around in your application, then you're not clear about what your application actually does.
