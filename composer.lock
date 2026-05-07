@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "dcb437d3503c5305349b14c082e7a311",
+    "content-hash": "f5e67725ff3e247a7af802149ea9f8e3",
     "packages": [],
     "packages-dev": [
         {
@@ -79,16 +79,16 @@
         },
         {
             "name": "league/climate",
-            "version": "3.8.2",
+            "version": "3.10.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/climate.git",
-                "reference": "a785a3ac8f584eed4abd45e4e16fe64c46659a28"
+                "reference": "f2d78fbc504740bcd0209e40a4586c886567ddc9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/climate/zipball/a785a3ac8f584eed4abd45e4e16fe64c46659a28",
-                "reference": "a785a3ac8f584eed4abd45e4e16fe64c46659a28",
+                "url": "https://api.github.com/repos/thephpleague/climate/zipball/f2d78fbc504740bcd0209e40a4586c886567ddc9",
+                "reference": "f2d78fbc504740bcd0209e40a4586c886567ddc9",
                 "shasum": ""
             },
             "require": {
@@ -97,9 +97,10 @@
                 "seld/cli-prompt": "^1.0"
             },
             "require-dev": {
-                "mikey179/vfsstream": "^1.6.10",
-                "mockery/mockery": "^1.4.2",
-                "phpunit/phpunit": "^9.5.10"
+                "mikey179/vfsstream": "^1.6.12",
+                "mockery/mockery": "^1.6.12",
+                "phpunit/phpunit": "^9.6.21",
+                "squizlabs/php_codesniffer": "^3.10"
             },
             "suggest": {
                 "ext-mbstring": "If ext-mbstring is not available you MUST install symfony/polyfill-mbstring"
@@ -138,9 +139,9 @@
             ],
             "support": {
                 "issues": "https://github.com/thephpleague/climate/issues",
-                "source": "https://github.com/thephpleague/climate/tree/3.8.2"
+                "source": "https://github.com/thephpleague/climate/tree/3.10.1"
             },
-            "time": "2022-06-18T14:42:08+00:00"
+            "time": "2026-03-19T19:32:55+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -373,16 +374,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "1.8.5",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "f6598a5ff12ca4499a836815e08b4d77a2ddeb20"
-            },
+            "version": "1.12.33",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/f6598a5ff12ca4499a836815e08b4d77a2ddeb20",
-                "reference": "f6598a5ff12ca4499a836815e08b4d77a2ddeb20",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/37982d6fc7cbb746dda7773530cda557cdf119e1",
+                "reference": "37982d6fc7cbb746dda7773530cda557cdf119e1",
                 "shasum": ""
             },
             "require": {
@@ -411,8 +407,11 @@
                 "static analysis"
             ],
             "support": {
+                "docs": "https://phpstan.org/user-guide/getting-started",
+                "forum": "https://github.com/phpstan/phpstan/discussions",
                 "issues": "https://github.com/phpstan/phpstan/issues",
-                "source": "https://github.com/phpstan/phpstan/tree/1.8.5"
+                "security": "https://github.com/phpstan/phpstan/security/policy",
+                "source": "https://github.com/phpstan/phpstan-src"
             },
             "funding": [
                 {
@@ -422,13 +421,9 @@
                 {
                     "url": "https://github.com/phpstan",
                     "type": "github"
-                },
-                {
-                    "url": "https://tidelift.com/funding/github/packagist/phpstan/phpstan",
-                    "type": "tidelift"
                 }
             ],
-            "time": "2022-09-07T16:05:32+00:00"
+            "time": "2026-02-28T20:30:03+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -912,25 +907,25 @@
         },
         {
             "name": "rskuipers/php-assumptions",
-            "version": "0.8.1",
+            "version": "0.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rskuipers/php-assumptions.git",
-                "reference": "0e569b8ac503e56583642bbe98cccb254a18acbc"
+                "reference": "06591c2b7f66969e02b54508a8c7576a759c0e9d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rskuipers/php-assumptions/zipball/0e569b8ac503e56583642bbe98cccb254a18acbc",
-                "reference": "0e569b8ac503e56583642bbe98cccb254a18acbc",
+                "url": "https://api.github.com/repos/rskuipers/php-assumptions/zipball/06591c2b7f66969e02b54508a8c7576a759c0e9d",
+                "reference": "06591c2b7f66969e02b54508a8c7576a759c0e9d",
                 "shasum": ""
             },
             "require": {
                 "league/climate": "^3.1",
-                "nikic/php-parser": "^2.0|^3.0|^4.0"
+                "nikic/php-parser": "^4.0|^5.0"
             },
             "require-dev": {
-                "phpspec/prophecy": "~1.0",
-                "phpunit/phpunit": "^5.6"
+                "phpspec/prophecy-phpunit": "^2.3",
+                "phpunit/phpunit": "^11.5"
             },
             "bin": [
                 "bin/phpa"
@@ -954,9 +949,9 @@
             "description": "Static code analysis tool to detect weak assumptions",
             "support": {
                 "issues": "https://github.com/rskuipers/php-assumptions/issues",
-                "source": "https://github.com/rskuipers/php-assumptions/tree/0.8.1"
+                "source": "https://github.com/rskuipers/php-assumptions/tree/0.9.1"
             },
-            "time": "2022-02-15T19:28:15+00:00"
+            "time": "2025-03-22T15:15:59+00:00"
         },
         {
             "name": "sebastian/cli-parser",
