@@ -165,6 +165,33 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_preserves_sqlite_column_names_for_unaliased_selects()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $result = \TypeDb\quick_query(
+            $connection,
+            'select 1'
+        );
+
+        $expected = [
+            [
+                1 => new \TypeDb\SqlValue\SqlInteger(1),
+            ],
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @test
+     */
     public function it_throws_when_prepare_returns_false_in_silent_mode()
     {
         try {
