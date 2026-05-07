@@ -65,13 +65,15 @@ bd close <id>         # Complete work
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
+4. **Sync beads state and push git branch**:
    ```bash
    git pull --rebase
-   bd dolt push
+   bd dolt pull || true   # embedded/local-only repos may have no Dolt remote configured
+   bd dolt push           # if no remote is configured this prints a skip message and preserves local-only beads state
    git push
    git status  # MUST show "up to date with origin"
    ```
+   In this repository today, `bd dolt pull` reports `Error 1105: no remote` and `bd dolt push` reports `No remote is configured — skipping.` from both the main workspace and bd-created worktrees. Treat beads sync as local-only unless a maintainer explicitly configures a Dolt remote with `bd dolt remote add ...`.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
