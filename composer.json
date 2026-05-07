@@ -8,12 +8,13 @@
     },
     "require-dev": {
         "doctrine/instantiator": "^1.5",
-        "phpstan/phpstan": "^1.8",
-        "rskuipers/php-assumptions": "^0.8.1",
+        "phpstan/phpstan": "^1.12.33",
+        "rskuipers/php-assumptions": "^0.9.1",
         "phpunit/phpunit": "^9.6",
         "squizlabs/php_codesniffer": "^3.7",
         "symfony/var-dumper": "^6.1",
-        "ext-pdo_sqlite": "*"
+        "ext-pdo_sqlite": "*",
+        "league/climate": "^3.10.1"
     },
     "license": "MIT",
     "authors": [
