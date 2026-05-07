@@ -165,6 +165,33 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_preserves_sqlite_column_names_for_unaliased_selects()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $result = \TypeDb\quick_query(
+            $connection,
+            'select 1'
+        );
+
+        $expected = [
+            [
+                1 => new \TypeDb\SqlValue\SqlInteger(1),
+            ],
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @test
+     */
     public function it_throws_when_prepare_returns_false_in_silent_mode()
     {
         try {
@@ -190,6 +217,44 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
             $this->assertStringContainsString('Failed to prepare query [', $message);
             $this->assertStringContainsString(']: ', $message);
             $this->assertStringContainsString('. SQL: select * from', $message);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_when_execute_returns_false_in_silent_mode()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_SILENT);
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query(
+            $connection,
+            'create table if not exists type_db_exec_fail ( id int not null, value varchar not null )',
+            []
+        );
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'insert into type_db_exec_fail (id, value) values (?, ?)',
+                [\TypeDb\to_sql(1), \TypeDb\to_sql(null)]
+            );
+
+            $this->fail('Expected quick_query() to throw when execute() returns false.');
+        } catch (\RuntimeException $error) {
+            $message = $error->getMessage();
+
+            $this->assertStringContainsString('Failed to execute query [23000/19]: ', $message);
+            $this->assertStringContainsString('NOT NULL constraint failed: type_db_exec_fail.value', $message);
+            $this->assertStringContainsString('. SQL: insert into type_db_exec_fail (id, value) values (?, ?)', $message);
         }
     }
 }

@@ -194,6 +194,8 @@ The helper returns a nested list of objects of type `\TypeDb\SqlValue\SqlValue`.
 
 This happens automatically within the helper. The return types are automatically converted into `\TypeDb\SqlValue\SqlValue` objects for you!
 
+`quick_query()` preserves whatever column names PDO reports for the select list. For explicit aliases like `select 1 as id`, that means string keys such as `'id'`. For an unaliased SQLite scalar select like `select 1`, PDO reports the column name as `1`, so the row shape is `[[1 => new \TypeDb\SqlValue\SqlInteger(1)]]`.
+
 ```php
 <?php
 
@@ -220,6 +222,8 @@ $result looks like [
 ];
 */
 ```
+
+If the underlying PDO connection is in `PDO::ERRMODE_SILENT`, `\TypeDb\quick_query()` still fails deterministically when `prepare()` or `execute()` fails. In those cases it throws a `\RuntimeException` containing the PDO SQLSTATE, driver error code/message, and the SQL string, instead of returning an empty result.
 
 ## But why does type safety matter?
 
