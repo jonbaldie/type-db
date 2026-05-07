@@ -5,6 +5,29 @@ declare(strict_types=1);
 namespace TypeDb;
 
 use PDO;
+use PDOStatement;
+
+function throw_query_failure(
+    PDO|PDOStatement $statement_or_pdo,
+    string $action,
+    string $sql,
+): never {
+    $error = $statement_or_pdo->errorInfo();
+    $sqlState = $error[0] ?? 'unknown';
+    $driverCode = $error[1] ?? 'unknown';
+    $driverMessage = $error[2] ?? 'unknown';
+
+    throw new \RuntimeException(
+        sprintf(
+            'Failed to %s query [%s/%s]: %s. SQL: %s',
+            $action,
+            $sqlState,
+            (string) $driverCode,
+            $driverMessage,
+            $sql,
+        )
+    );
+}
 
 /**
  * @param string|float|int|null $value
@@ -72,26 +95,17 @@ function quick_query(
     $statement = $conn->pdo->prepare($sql);
 
     if ($statement === false) {
-        $error = $conn->pdo->errorInfo();
-        $sqlState = $error[0] ?? 'unknown';
-        $driverCode = $error[1] ?? 'unknown';
-        $driverMessage = $error[2] ?? 'unknown';
-
-        throw new \RuntimeException(
-            sprintf(
-                'Failed to prepare query [%s/%s]: %s. SQL: %s',
-                $sqlState,
-                (string) $driverCode,
-                $driverMessage,
-                $sql,
-            )
-        );
+        throw_query_failure($conn->pdo, 'prepare', $sql);
     }
 
     // 2. execute with parameters
-    $statement->execute(
+    $executed = $statement->execute(
         array_map('\TypeDb\from_sql', $sql_values)
     );
+
+    if ($executed === false) {
+        throw_query_failure($statement, 'execute', $sql);
+    }
 
     // 3. interpret result
     $results = $statement->fetchAll(PDO::FETCH_ASSOC);
