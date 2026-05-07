@@ -71,6 +71,23 @@ function quick_query(
     // 1. prepare query
     $statement = $conn->pdo->prepare($sql);
 
+    if ($statement === false) {
+        $error = $conn->pdo->errorInfo();
+        $sqlState = $error[0] ?? 'unknown';
+        $driverCode = $error[1] ?? 'unknown';
+        $driverMessage = $error[2] ?? 'unknown';
+
+        throw new \RuntimeException(
+            sprintf(
+                'Failed to prepare query [%s/%s]: %s. SQL: %s',
+                $sqlState,
+                (string) $driverCode,
+                $driverMessage,
+                $sql,
+            )
+        );
+    }
+
     // 2. execute with parameters
     $statement->execute(
         array_map('\TypeDb\from_sql', $sql_values)
@@ -88,4 +105,3 @@ function quick_query(
     // 5. return full result
     return $return;
 }
-

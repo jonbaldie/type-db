@@ -161,4 +161,35 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals($expected, $result);
     }
+
+    /**
+     * @test
+     */
+    public function it_throws_when_prepare_returns_false_in_silent_mode()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_SILENT);
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select * from'
+            );
+
+            $this->fail('Expected quick_query() to throw when prepare() returns false.');
+        } catch (\RuntimeException $error) {
+            $message = $error->getMessage();
+
+            $this->assertStringContainsString('Failed to prepare query [', $message);
+            $this->assertStringContainsString(']: ', $message);
+            $this->assertStringContainsString('. SQL: select * from', $message);
+        }
+    }
 }
