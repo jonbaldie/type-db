@@ -227,6 +227,8 @@ If the underlying PDO connection is in `PDO::ERRMODE_SILENT`, `\TypeDb\quick_que
 
 `SqlFloat` parameters are bound as their shortest round-trip decimal representation (found independently of the `precision` and `serialize_precision` ini settings), so a float written through `quick_query()` reads back bit-identically from a numeric-affinity column instead of being truncated to 14 significant digits by PHP's default double-to-string conversion.
 
+Positive and negative infinity are encoded as SQLite overflow literals and round-trip as `SqlFloat`. `NAN` cannot be represented by SQLite, so binding a `SqlFloat(NAN)` throws an `InvalidArgumentException` instead of storing text.
+
 ## But why does type safety matter?
 
 If you're not precise about the types of the objects and variables passed around in your application, then you're not clear about what your application actually does.

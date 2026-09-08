@@ -65,6 +65,54 @@ class FloatRoundTripTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     * @dataProvider nonFiniteInfinities
+     */
+    public function infinities_roundtrip_as_sql_floats(float $value)
+    {
+        $connection = new \TypeDb\Connection($this->pdo);
+
+        \TypeDb\quick_query($connection, 'create table type_db_frt_inf (c real)');
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_frt_inf (c) values (?)',
+            [new \TypeDb\SqlValue\SqlFloat($value)]
+        );
+
+        $row = \TypeDb\quick_query($connection, 'select c from type_db_frt_inf')[0]['c'];
+        $this->assertInstanceOf(\TypeDb\SqlValue\SqlFloat::class, $row);
+        $this->assertSame($value, $row->value);
+    }
+
+    /**
+     * @test
+     */
+    public function nan_is_rejected_instead_of_being_stored_as_text()
+    {
+        $connection = new \TypeDb\Connection($this->pdo);
+
+        \TypeDb\quick_query($connection, 'create table type_db_frt_nan (c real)');
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'insert into type_db_frt_nan (c) values (?)',
+                [new \TypeDb\SqlValue\SqlFloat(NAN)]
+            );
+
+            $this->fail('Expected SqlFloat(NAN) to be rejected.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('NAN', strtoupper($error->getMessage()));
+        }
+
+        $count = \TypeDb\quick_query(
+            $connection,
+            'select count(*) as count from type_db_frt_nan'
+        )[0]['count'];
+        $this->assertSame(0, $count->value);
+    }
+
+    /**
      * @return array<string, array{0: float}>
      */
     public function highPrecisionFloats(): array
@@ -78,6 +126,17 @@ class FloatRoundTripTest extends \PHPUnit\Framework\TestCase
             'php float min' => [PHP_FLOAT_MIN],
             'php float max' => [PHP_FLOAT_MAX],
             'php float epsilon' => [PHP_FLOAT_EPSILON],
+        ];
+    }
+
+    /**
+     * @return array<string, array{0: float}>
+     */
+    public function nonFiniteInfinities(): array
+    {
+        return [
+            'positive infinity' => [INF],
+            'negative infinity' => [-INF],
         ];
     }
 }
