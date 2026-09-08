@@ -18,7 +18,7 @@ class Connection
      * @return SqlValue\SqlValue[][]
      */
     public function quickQuery(
-        string $sql, array $sql_values
+        string $sql, array $sql_values = []
     ): array {
         return quick_query($this, $sql, $sql_values);
     }
