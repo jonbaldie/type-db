@@ -7,6 +7,44 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function the_connection_method_defaults_sql_values()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['id' => new \TypeDb\SqlValue\SqlInteger(1)]],
+            $connection->quickQuery('select 1 as id')
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function the_connection_method_accepts_explicit_sql_values()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['id' => new \TypeDb\SqlValue\SqlString('bar')]],
+            $connection->quickQuery('select ? as id', [\TypeDb\to_sql('bar')])
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_writes_and_fetches_data()
     {
         try {
