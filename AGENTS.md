@@ -1,16 +1,18 @@
 # Agent Instructions
 
-This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
+## Agent skills
 
-## Quick Reference
+### Issue tracker
 
-```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --claim  # Claim work atomically
-bd close <id>         # Complete work
-bd dolt push          # Push beads data to remote
-```
+Track all work in GitHub Issues. Before creating, reading, or updating tickets, read `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five default triage labels. Before triaging or changing issue labels, read `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use the single-context layout: root `CONTEXT.md` and `docs/adr/`. Before exploring the codebase or changing domain terms or decisions, read `docs/agents/domain.md`.
 
 ## Non-Interactive Shell Commands
 
@@ -36,51 +38,31 @@ cp -rf source dest          # NOT: cp -r source dest
 - `apt-get` - use `-y` flag
 - `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
 
-<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
-## Beads Issue Tracker
+## Quality gates
 
-This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
-
-### Quick Reference
+For code changes, run:
 
 ```bash
-bd ready              # Find available work
-bd show <id>          # View issue details
-bd update <id> --claim  # Claim work
-bd close <id>         # Complete work
+composer install --no-interaction
+./vendor/bin/phpunit ./tests --testdox
+./vendor/bin/phpstan analyse
+./vendor/bin/phpa ./src
 ```
 
-### Rules
-
-- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
-- Run `bd prime` for detailed command reference and session close protocol
-- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
+For database runtime changes, also verify the changed behavior against a real `sqlite::memory:` connection.
 
 ## Session Completion
 
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **Sync beads state and push git branch**:
+1. File GitHub issues for remaining work and update the status of existing issues.
+2. Run the quality gates when code changed.
+3. Commit the session's changes, then sync and push:
    ```bash
    git pull --rebase
-   bd dolt pull || true   # embedded/local-only repos may have no Dolt remote configured
-   bd dolt push           # if no remote is configured this prints a skip message and preserves local-only beads state
    git push
-   git status  # MUST show "up to date with origin"
+   git status
    ```
-   In this repository today, `bd dolt pull` reports `Error 1105: no remote` and `bd dolt push` reports `No remote is configured — skipping.` from both the main workspace and bd-created worktrees. Treat beads sync as local-only unless a maintainer explicitly configures a Dolt remote with `bd dolt remote add ...`.
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
+4. Remove temporary worktrees and stashes created by the session, and prune stale remote-tracking branches.
+5. Verify all session changes are committed and pushed and the branch is up to date with its upstream.
+6. Hand off the result, verification, and any remaining work.
 
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-<!-- END BEADS INTEGRATION -->
+Work is complete only after `git push` succeeds. If it fails, resolve the failure and retry.
