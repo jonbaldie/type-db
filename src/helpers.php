@@ -237,7 +237,9 @@ function from_sql(
         return null;
     }
 
-    return null;
+    throw new \InvalidArgumentException(
+        sprintf('Unsupported SqlValue implementation: %s', $value::class)
+    );
 }
 
 /**

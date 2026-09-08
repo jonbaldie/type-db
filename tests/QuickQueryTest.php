@@ -536,6 +536,48 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_throws_and_writes_nothing_when_binding_unknown_sql_value()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+        $unknown = new class implements \TypeDb\SqlValue\SqlValue {};
+
+        \TypeDb\quick_query(
+            $connection,
+            'create table if not exists type_db_unknown ( id int not null, value varchar null )',
+            []
+        );
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'insert into type_db_unknown (id, value) values (?, ?)',
+                [\TypeDb\to_sql(1), $unknown]
+            );
+
+            $this->fail('Expected quick_query() to throw when binding an unknown SqlValue.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString($unknown::class, $error->getMessage());
+        }
+
+        $this->assertEquals(
+            [],
+            \TypeDb\quick_query(
+                $connection,
+                'select id, value from type_db_unknown',
+                []
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_returns_distinct_column_names()
     {
         try {

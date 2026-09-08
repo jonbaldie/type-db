@@ -71,6 +71,33 @@ class SqlValueTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_unwraps_shipped_sql_value_classes()
+    {
+        $this->assertSame('bar', \TypeDb\from_sql(new \TypeDb\SqlValue\SqlString('bar')));
+        $this->assertSame(1.5, \TypeDb\from_sql(new \TypeDb\SqlValue\SqlFloat(1.5)));
+        $this->assertSame(7, \TypeDb\from_sql(new \TypeDb\SqlValue\SqlInteger(7)));
+        $this->assertNull(\TypeDb\from_sql(new \TypeDb\SqlValue\SqlNull()));
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_for_unknown_sql_value_implementations()
+    {
+        $unknown = new class implements \TypeDb\SqlValue\SqlValue {};
+
+        try {
+            \TypeDb\from_sql($unknown);
+
+            $this->fail('Expected from_sql() to throw for an unknown SqlValue implementation.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString($unknown::class, $error->getMessage());
+        }
+    }
+
+    /**
      * @dataProvider
      */
     public function strings(): array
