@@ -230,6 +230,177 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_maps_stringified_numeric_columns_from_sql_types()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, true);
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query(
+            $connection,
+            'create table if not exists type_db_stringify ( id integer not null, amount real not null, label varchar not null )',
+            []
+        );
+
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_stringify (id, amount, label) values (?, ?, ?)',
+            [\TypeDb\to_sql(1), \TypeDb\to_sql(1.5), \TypeDb\to_sql('1')]
+        );
+
+        $result = \TypeDb\quick_query(
+            $connection,
+            'select id, amount, label from type_db_stringify',
+            []
+        );
+
+        $expected = [
+            [
+                'id' => new \TypeDb\SqlValue\SqlInteger(1),
+                'amount' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                'label' => new \TypeDb\SqlValue\SqlString('1'),
+            ],
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @test
+     */
+    public function it_maps_numeric_columns_from_sql_types_without_stringify()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query(
+            $connection,
+            'create table if not exists type_db_types ( id integer not null, amount real not null, label varchar not null )',
+            []
+        );
+
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_types (id, amount, label) values (?, ?, ?)',
+            [\TypeDb\to_sql(1), \TypeDb\to_sql(1.5), \TypeDb\to_sql('1')]
+        );
+
+        $result = \TypeDb\quick_query(
+            $connection,
+            'select id, amount, label from type_db_types',
+            []
+        );
+
+        $expected = [
+            [
+                'id' => new \TypeDb\SqlValue\SqlInteger(1),
+                'amount' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                'label' => new \TypeDb\SqlValue\SqlString('1'),
+            ],
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @test
+     */
+    public function it_maps_nulls_when_fetches_are_stringified()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, true);
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query(
+            $connection,
+            'create table if not exists type_db_stringify_null ( id integer not null, amount real null, label varchar null )',
+            []
+        );
+
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_stringify_null (id, amount, label) values (?, ?, ?)',
+            [\TypeDb\to_sql(1), \TypeDb\to_sql(null), \TypeDb\to_sql(null)]
+        );
+
+        $result = \TypeDb\quick_query(
+            $connection,
+            'select id, amount, label from type_db_stringify_null',
+            []
+        );
+
+        $expected = [
+            [
+                'id' => new \TypeDb\SqlValue\SqlInteger(1),
+                'amount' => new \TypeDb\SqlValue\SqlNull(),
+                'label' => new \TypeDb\SqlValue\SqlNull(),
+            ],
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @test
+     */
+    public function it_maps_stringified_integer_after_a_null_row()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, true);
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query(
+            $connection,
+            'create table if not exists type_db_stringify_null_first ( id integer )',
+            []
+        );
+
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_stringify_null_first (id) values (?), (?)',
+            [\TypeDb\to_sql(null), \TypeDb\to_sql(1)]
+        );
+
+        $result = \TypeDb\quick_query(
+            $connection,
+            'select id from type_db_stringify_null_first order by id is not null',
+            []
+        );
+
+        $expected = [
+            ['id' => new \TypeDb\SqlValue\SqlNull()],
+            ['id' => new \TypeDb\SqlValue\SqlInteger(1)],
+        ];
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * @test
+     */
     public function it_throws_when_prepare_returns_false_in_silent_mode()
     {
         try {
