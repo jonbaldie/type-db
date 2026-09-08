@@ -243,6 +243,47 @@ function from_sql(
 }
 
 /**
+ * The shortest decimal representation that converts back to the exact same
+ * double. Searching increasing precision instead of relying on the
+ * `precision` or `serialize_precision` ini keeps this independent of the
+ * host configuration.
+ */
+function round_trip_float_string(float $value): string
+{
+    for ($precision = 1; $precision < 17; $precision++) {
+        $candidate = sprintf('%.' . $precision . 'G', $value);
+
+        if ((float) $candidate === $value) {
+            return $candidate;
+        }
+    }
+
+    return sprintf('%.17G', $value);
+}
+
+/**
+ * Prepare a SqlValue for parameter binding.
+ *
+ * PDO binds floats as text, and PHP's double-to-string conversion uses the
+ * `precision` ini (default 14), silently truncating doubles with more
+ * significant digits before they reach SQLite. Binding the round-trip
+ * decimal representation instead lets SQLite parse the value back to the
+ * exact same double, keeping write→read roundtrips lossless for
+ * numeric-affinity columns.
+ *
+ * @param SqlValue\SqlValue $value
+ * @return string|float|int|null
+ */
+function bind_sql_value(SqlValue\SqlValue $value): string|float|int|null
+{
+    if ($value instanceof SqlValue\SqlFloat) {
+        return round_trip_float_string($value->value);
+    }
+
+    return from_sql($value);
+}
+
+/**
  * @param Connection $conn
  * @param string $sql
  * @param SqlValue\SqlValue[] $sql_values
@@ -263,7 +304,7 @@ function quick_query(
 
     // 2. execute with parameters
     $executed = $statement->execute(
-        array_map('\TypeDb\from_sql', $sql_values)
+        array_map('\TypeDb\bind_sql_value', $sql_values)
     );
 
     if ($executed === false) {

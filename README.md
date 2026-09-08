@@ -225,6 +225,8 @@ $result looks like [
 
 If the underlying PDO connection is in `PDO::ERRMODE_SILENT`, `\TypeDb\quick_query()` still fails deterministically when `prepare()` or `execute()` fails. In those cases it throws a `\RuntimeException` containing the PDO SQLSTATE, driver error code/message, and the SQL string, instead of returning an empty result.
 
+`SqlFloat` parameters are bound as their shortest round-trip decimal representation (found independently of the `precision` and `serialize_precision` ini settings), so a float written through `quick_query()` reads back bit-identically from a numeric-affinity column instead of being truncated to 14 significant digits by PHP's default double-to-string conversion.
+
 ## But why does type safety matter?
 
 If you're not precise about the types of the objects and variables passed around in your application, then you're not clear about what your application actually does.
