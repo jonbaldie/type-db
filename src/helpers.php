@@ -246,10 +246,19 @@ function from_sql(
  * The shortest decimal representation that converts back to the exact same
  * double. Searching increasing precision instead of relying on the
  * `precision` or `serialize_precision` ini keeps this independent of the
- * host configuration.
+ * host configuration. Infinities use SQLite overflow literals, while NAN is
+ * rejected because SQLite has no NaN representation.
  */
 function round_trip_float_string(float $value): string
 {
+    if (is_nan($value)) {
+        throw new \InvalidArgumentException('NAN cannot be represented by SQLite.');
+    }
+
+    if (is_infinite($value)) {
+        return $value > 0 ? '9e999' : '-9e999';
+    }
+
     for ($precision = 1; $precision < 17; $precision++) {
         $candidate = sprintf('%.' . $precision . 'G', $value);
 
@@ -269,7 +278,8 @@ function round_trip_float_string(float $value): string
  * significant digits before they reach SQLite. Binding the round-trip
  * decimal representation instead lets SQLite parse the value back to the
  * exact same double, keeping write→read roundtrips lossless for
- * numeric-affinity columns.
+ * numeric-affinity columns. Infinities use overflow literals and NAN is
+ * rejected because SQLite cannot represent it.
  *
  * @param SqlValue\SqlValue $value
  * @return string|float|int|null
