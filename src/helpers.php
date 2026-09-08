@@ -103,6 +103,33 @@ function statement_column_kinds(PDOStatement $statement): array
 }
 
 /**
+ * @return list<string>
+ */
+function statement_duplicate_column_names(PDOStatement $statement): array
+{
+    $seen = [];
+    $duplicates = [];
+    $column_count = $statement->columnCount();
+
+    for ($index = 0; $index < $column_count; $index++) {
+        $meta = $statement->getColumnMeta($index);
+        if ($meta === false) {
+            continue;
+        }
+
+        $name = $meta['name'];
+
+        if (isset($seen[$name])) {
+            $duplicates[$name] = true;
+        }
+
+        $seen[$name] = true;
+    }
+
+    return array_keys($duplicates);
+}
+
+/**
  * @param list<?string> $column_kinds
  * @param array<array-key, mixed> $row
  * @return SqlValue\SqlValue[]
@@ -242,6 +269,18 @@ function quick_query(
     }
 
     // 3. interpret result
+    $duplicates = statement_duplicate_column_names($statement);
+
+    if (count($duplicates) > 0) {
+        throw new \RuntimeException(
+            sprintf(
+                'Failed to interpret query [HY000/unknown]: Duplicate column names in result set: %s. SQL: %s',
+                implode(', ', $duplicates),
+                $sql,
+            )
+        );
+    }
+
     $column_kinds = statement_column_kinds($statement);
     $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 

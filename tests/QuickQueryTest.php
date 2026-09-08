@@ -466,4 +466,94 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
             $this->assertStringContainsString('. SQL: insert into type_db_exec_fail (id, value) values (?, ?)', $message);
         }
     }
+
+    /**
+     * @test
+     */
+    public function it_throws_when_selected_columns_share_a_name()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select 1 as id, 2 as id'
+            );
+
+            $this->fail('Expected quick_query() to throw when selected columns share a name.');
+        } catch (\RuntimeException $error) {
+            $message = $error->getMessage();
+
+            $this->assertStringContainsString('Failed to interpret query [', $message);
+            $this->assertStringContainsString(']: ', $message);
+            $this->assertStringContainsString('id', $message);
+            $this->assertStringContainsString('. SQL: select 1 as id, 2 as id', $message);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_when_joined_columns_share_names()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query($connection, 'create table t (id integer, value text)');
+        \TypeDb\quick_query($connection, 'create table u (id integer, value text)');
+        \TypeDb\quick_query($connection, 'insert into t (id, value) values (?, ?)', [\TypeDb\to_sql(1), \TypeDb\to_sql('a')]);
+        \TypeDb\quick_query($connection, 'insert into u (id, value) values (?, ?)', [\TypeDb\to_sql(1), \TypeDb\to_sql('b')]);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select t.id, u.id, t.value, u.value from t join u on t.id = u.id'
+            );
+
+            $this->fail('Expected quick_query() to throw when joined columns share names.');
+        } catch (\RuntimeException $error) {
+            $message = $error->getMessage();
+
+            $this->assertStringContainsString('Failed to interpret query [', $message);
+            $this->assertStringContainsString(']: ', $message);
+            $this->assertStringContainsString('id', $message);
+            $this->assertStringContainsString('value', $message);
+            $this->assertStringContainsString('. SQL: select t.id, u.id, t.value, u.value from t join u on t.id = u.id', $message);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_returns_distinct_column_names()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [
+                [
+                    'id' => new \TypeDb\SqlValue\SqlInteger(1),
+                    'value' => new \TypeDb\SqlValue\SqlInteger(2),
+                ],
+            ],
+            \TypeDb\quick_query($connection, 'select 1 as id, 2 as value')
+        );
+    }
 }
