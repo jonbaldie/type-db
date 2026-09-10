@@ -355,6 +355,54 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_preserves_numeric_parameter_storage_classes_without_column_affinity()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query(
+            $connection,
+            'create table type_db_numeric_parameters (integer_value, real_value blob)'
+        );
+
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_numeric_parameters (integer_value, real_value) values (?, ?)',
+            [
+                new \TypeDb\SqlValue\SqlInteger(7),
+                new \TypeDb\SqlValue\SqlFloat(1.5),
+            ]
+        );
+
+        $this->assertSame(
+            ['integer', 'real'],
+            $pdo
+                ->query('select typeof(integer_value), typeof(real_value) from type_db_numeric_parameters')
+                ->fetch(\PDO::FETCH_NUM)
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'integer_value' => new \TypeDb\SqlValue\SqlInteger(7),
+                    'real_value' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                'select integer_value, real_value from type_db_numeric_parameters'
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_maps_nulls_when_fetches_are_stringified()
     {
         try {
