@@ -1,0 +1,153 @@
+--- run 1 ---
+{
+    "negative_zero": {
+        "input_bits": "0000000000000080",
+        "result": {
+            "class": "TypeDb\\SqlValue\\SqlFloat",
+            "value": 0,
+            "bits": "0000000000000000"
+        }
+    },
+    "stringified_infinity": {
+        "raw_pdo_values": [
+            "INF",
+            "-INF"
+        ],
+        "quick_query_values": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            }
+        ]
+    },
+    "numbered_then_anonymous": {
+        "expected": {
+            "numbered": {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 2
+            },
+            "anonymous": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 3.5
+            }
+        },
+        "actual": {
+            "numbered": {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 2
+            },
+            "anonymous": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "3.5"
+            }
+        }
+    }
+}
+--- run 2 ---
+{
+    "negative_zero": {
+        "input_bits": "0000000000000080",
+        "result": {
+            "class": "TypeDb\\SqlValue\\SqlFloat",
+            "value": 0,
+            "bits": "0000000000000000"
+        }
+    },
+    "stringified_infinity": {
+        "raw_pdo_values": [
+            "INF",
+            "-INF"
+        ],
+        "quick_query_values": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            }
+        ]
+    },
+    "numbered_then_anonymous": {
+        "expected": {
+            "numbered": {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 2
+            },
+            "anonymous": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 3.5
+            }
+        },
+        "actual": {
+            "numbered": {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 2
+            },
+            "anonymous": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "3.5"
+            }
+        }
+    }
+}
+--- run 3 ---
+{
+    "negative_zero": {
+        "input_bits": "0000000000000080",
+        "result": {
+            "class": "TypeDb\\SqlValue\\SqlFloat",
+            "value": 0,
+            "bits": "0000000000000000"
+        }
+    },
+    "stringified_infinity": {
+        "raw_pdo_values": [
+            "INF",
+            "-INF"
+        ],
+        "quick_query_values": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            }
+        ]
+    },
+    "numbered_then_anonymous": {
+        "expected": {
+            "numbered": {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 2
+            },
+            "anonymous": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 3.5
+            }
+        },
+        "actual": {
+            "numbered": {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 2
+            },
+            "anonymous": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "3.5"
+            }
+        }
+    }
+}

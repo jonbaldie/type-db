@@ -1,0 +1,272 @@
+[
+    {
+        "name": "named parameters without sigils",
+        "status": "ok",
+        "result": []
+    },
+    {
+        "name": "named parameters with colon keys",
+        "status": "ok",
+        "result": []
+    },
+    {
+        "name": "at-sign named parameters",
+        "status": "error",
+        "exception": "PDOException",
+        "message": "SQLSTATE[HY000]: General error: 25 column index out of range"
+    },
+    {
+        "name": "at-sign named parameters with sigil keys",
+        "status": "error",
+        "exception": "PDOException",
+        "message": "SQLSTATE[HY000]: General error: 25 column index out of range"
+    },
+    {
+        "name": "dollar-sign named parameters",
+        "status": "error",
+        "exception": "PDOException",
+        "message": "SQLSTATE[HY000]: General error: 25 column index out of range"
+    },
+    {
+        "name": "dollar-sign named parameters with sigil keys",
+        "status": "error",
+        "exception": "PDOException",
+        "message": "SQLSTATE[HY000]: General error: 25 column index out of range"
+    },
+    {
+        "name": "repeated named float parameter",
+        "status": "ok",
+        "result": [
+            {
+                "first": {
+                    "type": "SqlFloat",
+                    "value": 5.5,
+                    "bits": "0000000000001640",
+                    "reciprocal": 0.18181818181818182
+                },
+                "second": {
+                    "type": "SqlFloat",
+                    "value": 5.5,
+                    "bits": "0000000000001640",
+                    "reciprocal": 0.18181818181818182
+                }
+            }
+        ]
+    },
+    {
+        "name": "numbered parameters",
+        "status": "ok",
+        "result": [
+            {
+                "second": {
+                    "type": "SqlFloat",
+                    "value": 6.5,
+                    "bits": "0000000000001a40",
+                    "reciprocal": 0.15384615384615385
+                },
+                "first": {
+                    "type": "SqlInteger",
+                    "value": 6
+                }
+            }
+        ]
+    },
+    {
+        "name": "numbered parameter followed by anonymous parameter",
+        "status": "ok",
+        "result": [
+            {
+                "numbered": {
+                    "type": "SqlInteger",
+                    "value": 2
+                },
+                "anonymous": {
+                    "type": "SqlString",
+                    "value": "3.5"
+                }
+            }
+        ]
+    },
+    {
+        "name": "quoted question marks",
+        "status": "ok",
+        "result": [
+            {
+                "identifier": {
+                    "type": "SqlString",
+                    "value": "?"
+                },
+                "value": {
+                    "type": "SqlFloat",
+                    "value": 7.5,
+                    "bits": "0000000000001e40",
+                    "reciprocal": 0.13333333333333333
+                },
+                "literal": {
+                    "type": "SqlString",
+                    "value": "?"
+                }
+            }
+        ]
+    },
+    {
+        "name": "comment question marks",
+        "status": "ok",
+        "result": [
+            {
+                "value": {
+                    "type": "SqlFloat",
+                    "value": 8.5,
+                    "bits": "0000000000002140",
+                    "reciprocal": 0.11764705882352941
+                }
+            }
+        ]
+    },
+    {
+        "name": "negative zero float round trip",
+        "status": "ok",
+        "result": {
+            "input_bits": "0000000000000080",
+            "result": [
+                {
+                    "value": {
+                        "type": "SqlFloat",
+                        "value": 0,
+                        "bits": "0000000000000000",
+                        "reciprocal": "INF"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "name": "all inserted rows",
+        "status": "ok",
+        "result": [
+            {
+                "id": {
+                    "type": "SqlInteger",
+                    "value": 1
+                },
+                "value": {
+                    "type": "SqlString",
+                    "value": "one"
+                },
+                "amount": {
+                    "type": "SqlFloat",
+                    "value": 1.5,
+                    "bits": "000000000000f83f",
+                    "reciprocal": 0.6666666666666666
+                }
+            },
+            {
+                "id": {
+                    "type": "SqlInteger",
+                    "value": 2
+                },
+                "value": {
+                    "type": "SqlString",
+                    "value": "two"
+                },
+                "amount": {
+                    "type": "SqlFloat",
+                    "value": 2.5,
+                    "bits": "0000000000000440",
+                    "reciprocal": 0.4
+                }
+            }
+        ]
+    },
+    {
+        "name": "quoted unicode and NUL text parameter",
+        "status": "ok",
+        "result": {
+            "input": "O'Reilly; ? -- \/* not SQL *\/ caf\u00e9\u0000tail",
+            "result": [
+                {
+                    "value": {
+                        "type": "SqlString",
+                        "value": "O'Reilly; ? -- \/* not SQL *\/ caf\u00e9\u0000tail"
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "name": "failed write followed by valid retry",
+        "status": "ok",
+        "result": {
+            "failed_attempt": {
+                "exception": "PDOException",
+                "message": "SQLSTATE[23000]: Integrity constraint violation: 19 NOT NULL constraint failed: retry.id"
+            },
+            "rows_after_retry": [
+                {
+                    "id": {
+                        "type": "SqlInteger",
+                        "value": 10
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "name": "persistent database survives connection reopen",
+        "status": "ok",
+        "result": [
+            {
+                "value": {
+                    "type": "SqlString",
+                    "value": "saved"
+                }
+            }
+        ]
+    },
+    {
+        "name": "stringified values from affinity-neutral columns",
+        "status": "ok",
+        "result": [
+            {
+                "integer_value": {
+                    "type": "SqlInteger",
+                    "value": 9
+                },
+                "real_value": {
+                    "type": "SqlFloat",
+                    "value": 9.5,
+                    "bits": "0000000000002340",
+                    "reciprocal": 0.10526315789473684
+                }
+            }
+        ]
+    },
+    {
+        "name": "stringified infinity values",
+        "status": "ok",
+        "result": {
+            "raw_pdo_values": [
+                "INF",
+                "-INF"
+            ],
+            "quick_query_values": [
+                {
+                    "value": {
+                        "type": "SqlFloat",
+                        "value": 0,
+                        "bits": "0000000000000000",
+                        "reciprocal": "INF"
+                    }
+                },
+                {
+                    "value": {
+                        "type": "SqlFloat",
+                        "value": 0,
+                        "bits": "0000000000000000",
+                        "reciprocal": "INF"
+                    }
+                }
+            ]
+        }
+    }
+]
