@@ -38,17 +38,17 @@ function column_result_kind(array|false $meta): ?string
         return null;
     }
 
-    $declared = $meta['sqlite:decl_type'] ?? null;
-    if (is_string($declared)) {
-        $kind = kind_from_declared_type($declared);
+    $native = $meta['native_type'] ?? null;
+    if (is_string($native)) {
+        $kind = kind_from_native_type($native);
         if (is_string($kind)) {
             return $kind;
         }
     }
 
-    $native = $meta['native_type'] ?? null;
-    if (is_string($native)) {
-        return kind_from_native_type($native);
+    $declared = $meta['sqlite:decl_type'] ?? null;
+    if (is_string($declared)) {
+        return kind_from_declared_type($declared);
     }
 
     return null;
@@ -153,38 +153,24 @@ function cell_sql_value(mixed $value, ?string $kind): SqlValue\SqlValue
         return new SqlValue\SqlNull();
     }
 
-    if ($kind === 'integer') {
-        if (is_int($value)) {
-            return new SqlValue\SqlInteger($value);
-        }
+    if (is_int($value)) {
+        return new SqlValue\SqlInteger($value);
+    }
 
-        if (is_float($value) || is_string($value)) {
+    if (is_float($value)) {
+        return new SqlValue\SqlFloat($value);
+    }
+
+    if (is_string($value)) {
+        if ($kind === 'integer') {
             return new SqlValue\SqlInteger((int) $value);
         }
-    }
 
-    if ($kind === 'float') {
-        if (is_float($value)) {
-            return new SqlValue\SqlFloat($value);
-        }
-
-        if (is_int($value) || is_string($value)) {
+        if ($kind === 'float') {
             return new SqlValue\SqlFloat((float) $value);
         }
-    }
 
-    if ($kind === 'string') {
-        if (is_string($value)) {
-            return new SqlValue\SqlString($value);
-        }
-
-        if (is_int($value) || is_float($value)) {
-            return new SqlValue\SqlString((string) $value);
-        }
-    }
-
-    if (is_string($value) || is_int($value) || is_float($value)) {
-        return to_sql($value);
+        return new SqlValue\SqlString($value);
     }
 
     return new SqlValue\SqlNull();

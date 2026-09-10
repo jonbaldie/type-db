@@ -316,6 +316,45 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_preserves_runtime_sqlite_value_kinds_per_cell()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query(
+            $connection,
+            'create table type_db_runtime_kinds ( integer_value integer, real_value real )'
+        );
+
+        $pdo->exec("insert into type_db_runtime_kinds (integer_value, real_value) values (1.5, 'abc')");
+
+        $this->assertEquals(
+            [
+                [
+                    'integer_value' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                    'real_value' => new \TypeDb\SqlValue\SqlString('abc'),
+                ],
+            ],
+            \TypeDb\quick_query($connection, 'select integer_value, real_value from type_db_runtime_kinds')
+        );
+
+        $this->assertEquals(
+            [
+                ['value' => new \TypeDb\SqlValue\SqlInteger(1)],
+                ['value' => new \TypeDb\SqlValue\SqlFloat(1.5)],
+            ],
+            \TypeDb\quick_query($connection, 'select 1 as value union all select 1.5')
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_maps_nulls_when_fetches_are_stringified()
     {
         try {
