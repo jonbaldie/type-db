@@ -87,6 +87,46 @@ class FloatRoundTripTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function float_roundtrip_is_independent_of_a_comma_decimal_locale()
+    {
+        $originalLocale = setlocale(LC_NUMERIC, '0');
+        $this->assertNotFalse($originalLocale);
+
+        $available = setlocale(LC_NUMERIC, 'de_DE.UTF-8', 'fr_FR.UTF-8', 'nl_NL.UTF-8');
+
+        if ($available === false) {
+            setlocale(LC_NUMERIC, $originalLocale);
+            $this->markTestSkipped('No comma-decimal locale is installed.');
+        }
+
+        $this->assertStringContainsString(',', sprintf('%.1f', 1.5));
+
+        try {
+            $connection = new \TypeDb\Connection($this->pdo);
+
+            \TypeDb\quick_query($connection, 'create table type_db_frt_locale (c real)');
+            \TypeDb\quick_query(
+                $connection,
+                'insert into type_db_frt_locale (c) values (?)',
+                [new \TypeDb\SqlValue\SqlFloat(1.5)]
+            );
+
+            $row = \TypeDb\quick_query($connection, 'select c from type_db_frt_locale')[0]['c'];
+            $this->assertInstanceOf(\TypeDb\SqlValue\SqlFloat::class, $row);
+            $this->assertSame(1.5, $row->value);
+
+            $storage = $this->pdo
+                ->query('select typeof(c) from type_db_frt_locale')
+                ->fetchColumn();
+            $this->assertSame('real', $storage);
+        } finally {
+            setlocale(LC_NUMERIC, $originalLocale);
+        }
+    }
+
+    /**
+     * @test
+     */
     public function nan_is_rejected_instead_of_being_stored_as_text()
     {
         $connection = new \TypeDb\Connection($this->pdo);
