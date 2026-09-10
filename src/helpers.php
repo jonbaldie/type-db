@@ -293,6 +293,177 @@ function bind_sql_value(SqlValue\SqlValue $value): string|float|int|null
 }
 
 /**
+ * SQLite has no PDO parameter type for floats. Cast float placeholders in the
+ * SQL expression so that SQLite receives a REAL value instead of text.
+ *
+ * @param SqlValue\SqlValue[] $sql_values
+ */
+function sqlite_float_parameter_sql(string $sql, array $sql_values): string
+{
+    $values = array_values($sql_values);
+    $named_float_parameters = [];
+
+    foreach ($sql_values as $key => $value) {
+        if (!is_int($key) && $value instanceof SqlValue\SqlFloat) {
+            $named_float_parameters[ltrim((string) $key, ':@$')] = true;
+        }
+    }
+
+    $result = '';
+    $value_index = 0;
+    $length = strlen($sql);
+
+    for ($index = 0; $index < $length; $index++) {
+        $character = $sql[$index];
+
+        if ($character === "'" || $character === '"' || $character === chr(96)) {
+            $start = $index++;
+
+            while ($index < $length) {
+                if ($sql[$index] === $character) {
+                    if ($index + 1 < $length && $sql[$index + 1] === $character) {
+                        $index += 2;
+                        continue;
+                    }
+
+                    $index++;
+                    break;
+                }
+
+                $index++;
+            }
+
+            $result .= substr($sql, $start, $index - $start);
+            $index--;
+            continue;
+        }
+
+        if ($character === '[') {
+            $start = $index++;
+
+            while ($index < $length) {
+                if ($sql[$index] === ']') {
+                    if ($index + 1 < $length && $sql[$index + 1] === ']') {
+                        $index += 2;
+                        continue;
+                    }
+
+                    $index++;
+                    break;
+                }
+
+                $index++;
+            }
+
+            $result .= substr($sql, $start, $index - $start);
+            $index--;
+            continue;
+        }
+
+        if ($character === '-' && $index + 1 < $length && $sql[$index + 1] === '-') {
+            $start = $index;
+            $index += 2;
+
+            while ($index < $length) {
+                $line_character = substr($sql, $index, 1);
+
+                if ($line_character === "\r" || $line_character === "\n") {
+                    break;
+                }
+
+                $index++;
+            }
+
+            $result .= substr($sql, $start, $index - $start);
+            $index--;
+            continue;
+        }
+
+        if ($character === '/' && $index + 1 < $length && $sql[$index + 1] === '*') {
+            $start = $index;
+            $index += 2;
+
+            while ($index + 1 < $length && !($sql[$index] === '*' && $sql[$index + 1] === '/')) {
+                $index++;
+            }
+
+            if ($index + 1 < $length) {
+                $index += 2;
+            } else {
+                $index = $length;
+            }
+
+            $result .= substr($sql, $start, $index - $start);
+            $index--;
+            continue;
+        }
+
+        if ($character === '?') {
+            $start = $index;
+            $index++;
+            $number_start = $index;
+
+            while ($index < $length && ctype_digit($sql[$index])) {
+                $index++;
+            }
+
+            $parameter = substr($sql, $start, $index - $start);
+            $parameter_index = $index > $number_start
+                ? (int) substr($sql, $number_start, $index - $number_start) - 1
+                : $value_index++;
+            $value = $values[$parameter_index] ?? null;
+
+            $result .= $value instanceof SqlValue\SqlFloat
+                ? 'CAST(' . $parameter . ' AS REAL)'
+                : $parameter;
+            $index--;
+            continue;
+        }
+
+        if (
+            ($character === ':' || $character === '@' || $character === '$')
+            && $index + 1 < $length
+            && (ctype_alpha($sql[$index + 1]) || $sql[$index + 1] === '_')
+        ) {
+            $start = $index++;
+
+            while (
+                $index < $length
+                && (ctype_alnum($sql[$index]) || $sql[$index] === '_')
+            ) {
+                $index++;
+            }
+
+            $parameter = substr($sql, $start, $index - $start);
+            $name = substr($parameter, 1);
+
+            $result .= isset($named_float_parameters[$name])
+                ? 'CAST(' . $parameter . ' AS REAL)'
+                : $parameter;
+            $index--;
+            continue;
+        }
+
+        $result .= $character;
+    }
+
+    return $result;
+}
+
+function sql_value_parameter_type(SqlValue\SqlValue $value): int
+{
+    if ($value instanceof SqlValue\SqlNull) {
+        return PDO::PARAM_NULL;
+    }
+
+    if ($value instanceof SqlValue\SqlInteger) {
+        return PDO::PARAM_INT;
+    }
+
+    return PDO::PARAM_STR;
+}
+
+/**
  * @param Connection $conn
  * @param string $sql
  * @param SqlValue\SqlValue[] $sql_values
@@ -304,17 +475,32 @@ function quick_query(
     array $sql_values = [],
 ): array
 {
+    $prepared_sql = $conn->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+        ? sqlite_float_parameter_sql($sql, $sql_values)
+        : $sql;
+
     // 1. prepare query
-    $statement = $conn->pdo->prepare($sql);
+    $statement = $conn->pdo->prepare($prepared_sql);
 
     if ($statement === false) {
         throw_query_failure($conn->pdo, 'prepare', $sql);
     }
 
-    // 2. execute with parameters
-    $executed = $statement->execute(
-        array_map('\TypeDb\bind_sql_value', $sql_values)
-    );
+    // 2. bind and execute parameters
+    foreach ($sql_values as $key => $sql_value) {
+        $parameter = is_int($key) ? $key + 1 : $key;
+        $bound = $statement->bindValue(
+            $parameter,
+            bind_sql_value($sql_value),
+            sql_value_parameter_type($sql_value),
+        );
+
+        if ($bound === false) {
+            throw_query_failure($statement, 'bind', $sql);
+        }
+    }
+
+    $executed = $statement->execute();
 
     if ($executed === false) {
         throw_query_failure($statement, 'execute', $sql);

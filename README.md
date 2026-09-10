@@ -225,7 +225,7 @@ $result looks like [
 
 If the underlying PDO connection is in `PDO::ERRMODE_SILENT`, `\TypeDb\quick_query()` still fails deterministically when `prepare()` or `execute()` fails. In those cases it throws a `\RuntimeException` containing the PDO SQLSTATE, driver error code/message, and the SQL string, instead of returning an empty result.
 
-`SqlFloat` parameters are bound as their shortest round-trip decimal representation (found independently of the `precision` and `serialize_precision` ini settings), so a float written through `quick_query()` reads back bit-identically from a numeric-affinity column instead of being truncated to 14 significant digits by PHP's default double-to-string conversion.
+`SqlInteger` parameters use PDO's integer binding. `SqlFloat` parameters are bound as their shortest round-trip decimal representation (found independently of the `precision` and `serialize_precision` ini settings), and SQLite casts that parameter expression to `REAL`. This preserves numeric storage classes in affinity-neutral columns and lets floats written through `quick_query()` read back bit-identically from numeric-affinity columns instead of being truncated to 14 significant digits by PHP's default double-to-string conversion.
 
 Positive and negative infinity are encoded as SQLite overflow literals and round-trip as `SqlFloat`. `NAN` cannot be represented by SQLite, so binding a `SqlFloat(NAN)` throws an `InvalidArgumentException` instead of storing text.
 
