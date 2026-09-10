@@ -246,14 +246,27 @@ function round_trip_float_string(float $value): string
     }
 
     for ($precision = 1; $precision < 17; $precision++) {
-        $candidate = sprintf('%.' . $precision . 'G', $value);
+        $candidate = c_locale_float_string($value, $precision);
 
         if ((float) $candidate === $value) {
             return $candidate;
         }
     }
 
-    return sprintf('%.17G', $value);
+    return c_locale_float_string($value, 17);
+}
+
+/**
+ * Format a double with `%G` at the given precision using the C locale's
+ * decimal point. `sprintf()` honours `LC_NUMERIC`, so under a comma-decimal
+ * locale the output is text such as `1,5`, which SQLite cannot parse as a
+ * numeric literal. The grouping flag is never used, so the decimal
+ * separator is the only comma `%G` can emit and replacing it restores the
+ * locale-independent form.
+ */
+function c_locale_float_string(float $value, int $precision): string
+{
+    return str_replace(',', '.', sprintf('%.' . $precision . 'G', $value));
 }
 
 /**
