@@ -1,0 +1,192 @@
+{
+    "multi_row_type_coercion": {
+        "union_actual": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 1
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 0
+            }
+        ],
+        "table_forward": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 42
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 0
+            }
+        ],
+        "table_backward": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "hello"
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 42
+            }
+        ]
+    },
+    "mixed_named_positional_order": {
+        "named_float_before_positional_string": {
+            "pos": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            },
+            "named": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 1.5,
+                "bits": "000000000000f83f"
+            }
+        },
+        "named_string_before_positional_float": {
+            "pos": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "1.5"
+            },
+            "named": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "test"
+            }
+        }
+    },
+    "digit_prefixed_named_parameter": {
+        "actual": {
+            "class": "TypeDb\\SqlValue\\SqlString",
+            "value": "1.5"
+        }
+    }
+}
+{
+    "multi_row_type_coercion": {
+        "union_actual": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 1
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 0
+            }
+        ],
+        "table_forward": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 42
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 0
+            }
+        ],
+        "table_backward": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "hello"
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 42
+            }
+        ]
+    },
+    "mixed_named_positional_order": {
+        "named_float_before_positional_string": {
+            "pos": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            },
+            "named": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 1.5,
+                "bits": "000000000000f83f"
+            }
+        },
+        "named_string_before_positional_float": {
+            "pos": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "1.5"
+            },
+            "named": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "test"
+            }
+        }
+    },
+    "digit_prefixed_named_parameter": {
+        "actual": {
+            "class": "TypeDb\\SqlValue\\SqlString",
+            "value": "1.5"
+        }
+    }
+}
+{
+    "multi_row_type_coercion": {
+        "union_actual": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 1
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 0
+            }
+        ],
+        "table_forward": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 42
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 0
+            }
+        ],
+        "table_backward": [
+            {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "hello"
+            },
+            {
+                "class": "TypeDb\\SqlValue\\SqlInteger",
+                "value": 42
+            }
+        ]
+    },
+    "mixed_named_positional_order": {
+        "named_float_before_positional_string": {
+            "pos": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 0,
+                "bits": "0000000000000000"
+            },
+            "named": {
+                "class": "TypeDb\\SqlValue\\SqlFloat",
+                "value": 1.5,
+                "bits": "000000000000f83f"
+            }
+        },
+        "named_string_before_positional_float": {
+            "pos": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "1.5"
+            },
+            "named": {
+                "class": "TypeDb\\SqlValue\\SqlString",
+                "value": "test"
+            }
+        }
+    },
+    "digit_prefixed_named_parameter": {
+        "actual": {
+            "class": "TypeDb\\SqlValue\\SqlString",
+            "value": "1.5"
+        }
+    }
+}
