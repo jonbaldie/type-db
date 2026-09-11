@@ -86,6 +86,42 @@ class FloatRoundTripTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @test
+     * @dataProvider nonFiniteInfinities
+     */
+    public function infinities_roundtrip_as_sql_floats_with_stringified_fetches(float $value)
+    {
+        $this->pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, true);
+        $connection = new \TypeDb\Connection($this->pdo);
+
+        \TypeDb\quick_query($connection, 'create table type_db_frt_inf (c real)');
+        \TypeDb\quick_query(
+            $connection,
+            'insert into type_db_frt_inf (c) values (?)',
+            [new \TypeDb\SqlValue\SqlFloat($value)]
+        );
+
+        $row = \TypeDb\quick_query($connection, 'select c from type_db_frt_inf')[0]['c'];
+        $this->assertInstanceOf(\TypeDb\SqlValue\SqlFloat::class, $row);
+        $this->assertSame($value, $row->value);
+    }
+
+    /**
+     * @test
+     */
+    public function infinite_expressions_map_to_sql_floats_with_stringified_fetches()
+    {
+        $this->pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, true);
+        $connection = new \TypeDb\Connection($this->pdo);
+
+        $row = \TypeDb\quick_query($connection, 'select 9e999 as p, -9e999 as n, 1.5 as f')[0];
+
+        $this->assertSame(INF, $row['p']->value);
+        $this->assertSame(-INF, $row['n']->value);
+        $this->assertSame(1.5, $row['f']->value);
+    }
+
+    /**
+     * @test
      */
     public function float_roundtrip_is_independent_of_a_comma_decimal_locale()
     {
