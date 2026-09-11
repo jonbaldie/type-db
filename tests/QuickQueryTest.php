@@ -775,4 +775,80 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
             )
         );
     }
+
+    /**
+     * @test
+     * @dataProvider stringify_fetch_modes
+     */
+    public function it_maps_each_row_of_a_mixed_type_column_by_its_own_type(bool $stringify)
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, $stringify);
+
+        $result = \TypeDb\quick_query(
+            new \TypeDb\Connection($pdo),
+            "select 1 as val union all select 'hello' union all select 2.5 union all select 'world'",
+        );
+
+        $this->assertEquals(
+            [
+                ['val' => new \TypeDb\SqlValue\SqlInteger(1)],
+                ['val' => new \TypeDb\SqlValue\SqlString('hello')],
+                ['val' => new \TypeDb\SqlValue\SqlFloat(2.5)],
+                ['val' => new \TypeDb\SqlValue\SqlString('world')],
+            ],
+            $result
+        );
+    }
+
+    /**
+     * @test
+     * @dataProvider stringify_fetch_modes
+     */
+    public function it_maps_untyped_column_rows_independently_of_row_order(bool $stringify)
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, $stringify);
+        $connection = new \TypeDb\Connection($pdo);
+
+        \TypeDb\quick_query($connection, 'create table items (val)');
+        \TypeDb\quick_query(
+            $connection,
+            'insert into items (val) values (?), (?)',
+            [\TypeDb\to_sql(42), \TypeDb\to_sql('hello')],
+        );
+
+        $forward = \TypeDb\quick_query($connection, 'select val from items order by rowid asc');
+        $backward = \TypeDb\quick_query($connection, 'select val from items order by rowid desc');
+
+        $this->assertEquals(
+            [
+                ['val' => new \TypeDb\SqlValue\SqlInteger(42)],
+                ['val' => new \TypeDb\SqlValue\SqlString('hello')],
+            ],
+            $forward
+        );
+        $this->assertEquals(array_reverse($forward), $backward);
+    }
+
+    /**
+     * @return array<string, array{bool}>
+     */
+    public static function stringify_fetch_modes(): array
+    {
+        return [
+            'native fetches' => [false],
+            'stringified fetches' => [true],
+        ];
+    }
 }
