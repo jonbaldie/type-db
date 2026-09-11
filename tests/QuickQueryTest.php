@@ -455,6 +455,47 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_casts_float_values_bound_to_digit_prefixed_named_parameters()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['res' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :1a as res',
+                [':1a' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [['res' => new \TypeDb\SqlValue\SqlFloat(2.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :1 as res',
+                [':1' => \TypeDb\to_sql(2.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [['res' => new \TypeDb\SqlValue\SqlString('test')]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :1s as res',
+                [':1s' => \TypeDb\to_sql('test')]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_maps_nulls_when_fetches_are_stringified()
     {
         try {

@@ -441,7 +441,7 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
         if (
             ($character === ':' || $character === '@' || $character === '$')
             && $index + 1 < $length
-            && (ctype_alpha($sql[$index + 1]) || $sql[$index + 1] === '_')
+            && (ctype_alnum($sql[$index + 1]) || $sql[$index + 1] === '_')
         ) {
             $start = $index++;
 
