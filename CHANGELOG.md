@@ -4,6 +4,16 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [v0.9.5] — 2026-09-11
+
+### Fixed
+- Preserve runtime SQLite value kinds per cell by inspecting each fetched scalar's runtime type before column metadata, and prefer native metadata for stringified values (#17, #20).
+- Format floats using the C locale decimal point in `quick_query()` float binding to prevent decimal corruption under comma-decimal locales (#18, #21).
+- Preserve numeric storage classes for `SqlInteger` and `SqlFloat` parameters in affinity-neutral SQLite columns (#19, #22).
+
+### Documentation
+- Record exploratory testing findings and reproduction evidence (#23, #24, #25).
+
 ## [v0.9.4] — 2026-09-09
 
 ### Fixed
@@ -48,3 +58,5 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 [v0.9.2]: https://github.com/jonbaldie/type-db/compare/v0.9.1...v0.9.2
 [v0.9.3]: https://github.com/jonbaldie/type-db/compare/v0.9.2...v0.9.3
 [v0.9.4]: https://github.com/jonbaldie/type-db/compare/v0.9.3...v0.9.4
+[v0.9.5]: https://github.com/jonbaldie/type-db/compare/v0.9.4...v0.9.5
+
