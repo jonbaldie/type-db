@@ -421,9 +421,12 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
             }
 
             $parameter = substr($sql, $start, $index - $start);
+            // SQLite numbers an anonymous "?" one past the largest parameter
+            // number assigned so far, including explicit "?NNN" numbers.
             $parameter_index = $index > $number_start
                 ? (int) substr($sql, $number_start, $index - $number_start) - 1
-                : $value_index++;
+                : $value_index;
+            $value_index = max($value_index, $parameter_index + 1);
             $value = $values[$parameter_index] ?? null;
 
             $result .= $value instanceof SqlValue\SqlFloat
