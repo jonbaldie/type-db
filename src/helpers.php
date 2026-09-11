@@ -167,13 +167,26 @@ function cell_sql_value(mixed $value, ?string $kind): SqlValue\SqlValue
         }
 
         if ($kind === 'float') {
-            return new SqlValue\SqlFloat((float) $value);
+            return new SqlValue\SqlFloat(stringified_float($value));
         }
 
         return new SqlValue\SqlString($value);
     }
 
     return new SqlValue\SqlNull();
+}
+
+/**
+ * SQLite stringifies infinities as "INF" and "-INF", which a PHP float cast
+ * turns into 0.0.
+ */
+function stringified_float(string $value): float
+{
+    return match (strtoupper($value)) {
+        'INF', '+INF' => INF,
+        '-INF' => -INF,
+        default => (float) $value,
+    };
 }
 
 /**
