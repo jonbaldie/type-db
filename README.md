@@ -229,6 +229,8 @@ If the underlying PDO connection is in `PDO::ERRMODE_SILENT`, `\TypeDb\quick_que
 
 Positive and negative infinity are encoded as SQLite overflow literals and round-trip as `SqlFloat`. `NAN` cannot be represented by SQLite, so binding a `SqlFloat(NAN)` throws an `InvalidArgumentException` instead of storing text.
 
+On SQLite, named parameters must use the `:` prefix (e.g. `:name`). Although SQLite's SQL syntax also permits `@`- and `$`-prefixed parameter identifiers, PDO's SQLite driver resolves named parameter bindings exclusively via the `:` form and fails with column index errors on `@` or `$` parameters. Passing named values for `@`- or `$`-prefixed parameters throws an `InvalidArgumentException` before query preparation to provide an immediate, actionable error.
+
 ## But why does type safety matter?
 
 If you're not precise about the types of the objects and variables passed around in your application, then you're not clear about what your application actually does.

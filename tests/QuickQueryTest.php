@@ -935,6 +935,264 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_rejects_at_prefixed_named_parameters_on_sqlite()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select @a as r',
+                ['@a' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject @-prefixed named parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('@a', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_dollar_prefixed_named_parameters_on_sqlite()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select $a as r',
+                ['$a' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject $-prefixed named parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('$a', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_unprefixed_key_targeting_at_prefixed_parameter_in_sql()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select @a as r',
+                ['a' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject key targeting @-prefixed parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('@a', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_unprefixed_key_targeting_dollar_prefixed_parameter_in_sql()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select $a as r',
+                ['a' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject key targeting $-prefixed parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('$a', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_colon_prefixed_key_targeting_at_or_dollar_prefixed_parameter_in_sql()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select @a as r',
+                [':a' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject colon-prefixed key targeting @a.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('@a', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select $b as r',
+                [':b' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject colon-prefixed key targeting $b.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('$b', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_allows_colon_prefixed_named_parameters_with_prefixed_and_unprefixed_keys()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $withColon = \TypeDb\quick_query(
+            $connection,
+            'select :a as r',
+            [':a' => \TypeDb\to_sql(1.5)]
+        );
+
+        $withoutColon = \TypeDb\quick_query(
+            $connection,
+            'select :a as r',
+            ['a' => \TypeDb\to_sql(1.5)]
+        );
+
+        $this->assertEquals(
+            [['r' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            $withColon
+        );
+
+        $this->assertEquals(
+            [['r' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            $withoutColon
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_ignores_at_and_dollar_inside_literals_comments_and_quoted_identifiers()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $literalResult = \TypeDb\quick_query(
+            $connection,
+            "select '@a' as r, '\$b' as s"
+        );
+
+        $commentResult = \TypeDb\quick_query(
+            $connection,
+            "select 1 as r -- @a\nunion all select 2 /* \$b */"
+        );
+
+        $quotedIdResult = \TypeDb\quick_query(
+            $connection,
+            'select 1 as "@a", 2 as `$b`, 3 as [@c]'
+        );
+
+        $literalWithParam = \TypeDb\quick_query(
+            $connection,
+            "select '@a' as r, :val as v",
+            [':val' => \TypeDb\to_sql('hello')]
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'r' => new \TypeDb\SqlValue\SqlString('@a'),
+                    's' => new \TypeDb\SqlValue\SqlString('$b'),
+                ],
+            ],
+            $literalResult
+        );
+
+        $this->assertEquals(
+            [
+                ['r' => new \TypeDb\SqlValue\SqlInteger(1)],
+                ['r' => new \TypeDb\SqlValue\SqlInteger(2)],
+            ],
+            $commentResult
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    '@a' => new \TypeDb\SqlValue\SqlInteger(1),
+                    '$b' => new \TypeDb\SqlValue\SqlInteger(2),
+                    '@c' => new \TypeDb\SqlValue\SqlInteger(3),
+                ],
+            ],
+            $quotedIdResult
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'r' => new \TypeDb\SqlValue\SqlString('@a'),
+                    'v' => new \TypeDb\SqlValue\SqlString('hello'),
+                ],
+            ],
+            $literalWithParam
+        );
+    }
+
+    /**
      * @return array<string, array{bool}>
      */
     public static function stringify_fetch_modes(): array
