@@ -685,4 +685,94 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
             \TypeDb\quick_query($connection, 'select 1 as id, 2 as value')
         );
     }
+
+    /**
+     * @test
+     */
+    public function it_casts_anonymous_float_placeholders_after_numbered_placeholders()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [
+                [
+                    'numbered' => new \TypeDb\SqlValue\SqlInteger(2),
+                    'anonymous' => new \TypeDb\SqlValue\SqlFloat(3.5),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                'select ?2 as numbered, ? as anonymous',
+                [\TypeDb\to_sql(1), \TypeDb\to_sql(2), \TypeDb\to_sql(3.5)]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_casts_anonymous_float_placeholders_before_numbered_placeholders()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [
+                [
+                    'anonymous' => new \TypeDb\SqlValue\SqlFloat(3.5),
+                    'numbered' => new \TypeDb\SqlValue\SqlInteger(1),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                'select ? as anonymous, ?2 as numbered',
+                [\TypeDb\to_sql(3.5), \TypeDb\to_sql(1)]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_numbers_anonymous_placeholders_after_the_largest_numbered_placeholder()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [
+                [
+                    'third' => new \TypeDb\SqlValue\SqlInteger(3),
+                    'first' => new \TypeDb\SqlValue\SqlInteger(1),
+                    'anonymous' => new \TypeDb\SqlValue\SqlFloat(4.5),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                'select ?3 as third, ?1 as first, ? as anonymous',
+                [
+                    \TypeDb\to_sql(1),
+                    \TypeDb\to_sql(2),
+                    \TypeDb\to_sql(3),
+                    \TypeDb\to_sql(4.5),
+                ]
+            )
+        );
+    }
 }
