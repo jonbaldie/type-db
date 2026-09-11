@@ -535,14 +535,14 @@ function quick_query(
         );
     }
 
-    $column_kinds = statement_column_kinds($statement);
-    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+    // 4. turn result values into SqlValue objects. Column kinds are read
+    // after each fetch: SQLite reports the current row's storage class,
+    // which can differ between rows of the same column.
+    $return = [];
 
-    // 4. turn result values into SqlValue objects
-    $return = array_map(
-        fn (array $row) => row_sql_values($row, $column_kinds),
-        $results
-    );
+    while (is_array($row = $statement->fetch(PDO::FETCH_ASSOC))) {
+        $return[] = row_sql_values($row, statement_column_kinds($statement));
+    }
 
     // 5. return full result
     return $return;
