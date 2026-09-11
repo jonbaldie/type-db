@@ -313,7 +313,9 @@ function bind_sql_value(SqlValue\SqlValue $value): string|float|int|null
  */
 function sqlite_float_parameter_sql(string $sql, array $sql_values): string
 {
-    $values = array_values($sql_values);
+    // Keep integer keys aligned with bindValue()'s positional parameter indexes.
+    // Re-indexing would let named values shift the values checked for "?".
+    $values = $sql_values;
     $named_float_parameters = [];
 
     foreach ($sql_values as $key => $value) {
