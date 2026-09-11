@@ -29,6 +29,17 @@ function throw_query_failure(
     );
 }
 
+function throw_unsupported_sqlite_named_parameter(string $parameter): never
+{
+    throw new \InvalidArgumentException(
+        sprintf(
+            'SQLite named parameter "%s" is not supported; use a ":"-prefixed name instead.',
+            $parameter,
+        )
+    );
+}
+
+
 /**
  * @param array<string, mixed>|false $meta
  */
@@ -317,10 +328,22 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
     // Re-indexing would let named values shift the values checked for "?".
     $values = $sql_values;
     $named_float_parameters = [];
+    $named_parameters = [];
 
     foreach ($sql_values as $key => $value) {
-        if (!is_int($key) && $value instanceof SqlValue\SqlFloat) {
-            $named_float_parameters[ltrim((string) $key, ':@$')] = true;
+        if (!is_int($key)) {
+            $string_key = (string) $key;
+
+            if (str_starts_with($string_key, '@') || str_starts_with($string_key, '$')) {
+                throw_unsupported_sqlite_named_parameter($string_key);
+            }
+
+            $name = ltrim($string_key, ':');
+            $named_parameters[$name] = true;
+
+            if ($value instanceof SqlValue\SqlFloat) {
+                $named_float_parameters[$name] = true;
+            }
         }
     }
 
@@ -454,6 +477,10 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
 
             $parameter = substr($sql, $start, $index - $start);
             $name = substr($parameter, 1);
+
+            if (($character === '@' || $character === '$') && isset($named_parameters[$name])) {
+                throw_unsupported_sqlite_named_parameter($parameter);
+            }
 
             $result .= isset($named_float_parameters[$name])
                 ? 'CAST(' . $parameter . ' AS REAL)'
