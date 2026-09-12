@@ -1193,6 +1193,220 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_casts_float_values_bound_to_non_ascii_named_parameters()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['res' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :café as res',
+                [':café' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [['res' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :café as res',
+                ['café' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [['r' => new \TypeDb\SqlValue\SqlFloat(2.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :alpha_β as r',
+                [':alpha_β' => \TypeDb\to_sql(2.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [['r' => new \TypeDb\SqlValue\SqlString('test')]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :café as r',
+                [':café' => \TypeDb\to_sql('test')]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_casts_float_values_bound_to_non_ascii_named_parameters_under_c_locale()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+        $previous_locale = \setlocale(\LC_ALL, '0');
+
+        try {
+            \setlocale(\LC_ALL, 'C');
+
+            $this->assertEquals(
+                [['res' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+                \TypeDb\quick_query(
+                    $connection,
+                    'select :café as res',
+                    [':café' => \TypeDb\to_sql(1.5)]
+                )
+            );
+
+            $this->assertEquals(
+                [['res' => new \TypeDb\SqlValue\SqlFloat(2.5)]],
+                \TypeDb\quick_query(
+                    $connection,
+                    'select :café as res',
+                    ['café' => \TypeDb\to_sql(2.5)]
+                )
+            );
+
+            $this->assertEquals(
+                [['r' => new \TypeDb\SqlValue\SqlFloat(3.5)]],
+                \TypeDb\quick_query(
+                    $connection,
+                    'select :π as r',
+                    [':π' => \TypeDb\to_sql(3.5)]
+                )
+            );
+
+            $this->assertEquals(
+                [['r' => new \TypeDb\SqlValue\SqlFloat(4.5)]],
+                \TypeDb\quick_query(
+                    $connection,
+                    'select :über as r',
+                    [':über' => \TypeDb\to_sql(4.5)]
+                )
+            );
+        } finally {
+            \setlocale(\LC_ALL, $previous_locale);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_non_ascii_at_prefixed_named_parameters_on_sqlite()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select @über as r',
+                ['über' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject @-prefixed non-ASCII named parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('@über', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_non_ascii_dollar_prefixed_named_parameters_on_sqlite()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select $π as r',
+                ['π' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject $-prefixed non-ASCII named parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('$π', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_non_ascii_literals_comments_and_quoted_identifiers_untouched()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [
+                [
+                    'r' => new \TypeDb\SqlValue\SqlString(':café'),
+                    'v' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                "select ':café' as r, :val as v",
+                [':val' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [
+                ['r' => new \TypeDb\SqlValue\SqlInteger(1)],
+                ['r' => new \TypeDb\SqlValue\SqlInteger(2)],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                "select 1 as r -- :café\nunion all select 2 /* :über */"
+            )
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'café' => new \TypeDb\SqlValue\SqlInteger(1),
+                    'über' => new \TypeDb\SqlValue\SqlInteger(2),
+                    'π' => new \TypeDb\SqlValue\SqlInteger(3),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                'select 1 as "café", 2 as [über], 3 as π'
+            )
+        );
+    }
+
+    /**
      * @return array<string, array{bool}>
      */
     public static function stringify_fetch_modes(): array

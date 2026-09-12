@@ -317,6 +317,18 @@ function bind_sql_value(SqlValue\SqlValue $value): string|float|int|null
 }
 
 /**
+ * Whether the byte is a valid SQLite identifier character. SQLite's tokenizer
+ * accepts any byte >= 0x80 as part of an identifier, so UTF-8 multi-byte
+ * characters must not terminate the scan. ctype_alnum() alone is
+ * byte-class-based and rejects continuation bytes (and, under the C locale,
+ * all bytes >= 128).
+ */
+function is_sqlite_identifier_byte(string $byte): bool
+{
+    return ctype_alnum($byte) || $byte === '_' || ord($byte) >= 0x80;
+}
+
+/**
  * SQLite has no PDO parameter type for floats. Cast float placeholders in the
  * SQL expression so that SQLite receives a REAL value instead of text.
  *
@@ -464,13 +476,13 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
         if (
             ($character === ':' || $character === '@' || $character === '$')
             && $index + 1 < $length
-            && (ctype_alnum($sql[$index + 1]) || $sql[$index + 1] === '_')
+            && is_sqlite_identifier_byte($sql[$index + 1])
         ) {
             $start = $index++;
 
             while (
                 $index < $length
-                && (ctype_alnum($sql[$index]) || $sql[$index] === '_')
+                && is_sqlite_identifier_byte($sql[$index])
             ) {
                 $index++;
             }
