@@ -1407,6 +1407,159 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_casts_float_values_bound_to_named_parameters_containing_dollar()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['res' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :a$b as res',
+                [':a$b' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [['res' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :a$b as res',
+                ['a$b' => \TypeDb\to_sql(1.5)]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_treat_dollar_inside_colon_named_parameters_as_a_dollar_prefix()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertSame(
+            'select :a$b as res',
+            \TypeDb\sqlite_float_parameter_sql(
+                'select :a$b as res',
+                ['b' => \TypeDb\to_sql('test')]
+            )
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'res' => new \TypeDb\SqlValue\SqlString('ok'),
+                    'other' => new \TypeDb\SqlValue\SqlString('test'),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                'select :a$b as res, :b as other',
+                [
+                    ':a$b' => \TypeDb\to_sql('ok'),
+                    'b' => \TypeDb\to_sql('test'),
+                ]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_still_rejects_independent_dollar_prefixed_parameters_beside_colon_dollar_identifiers()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select $b as r',
+                ['b' => \TypeDb\to_sql('test')]
+            );
+
+            $this->fail('Expected quick_query() to reject independent $-prefixed parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('$b', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_dollar_inside_literals_comments_and_quoted_identifiers_untouched()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [
+                [
+                    'r' => new \TypeDb\SqlValue\SqlString(':a$b'),
+                    'v' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                "select ':a\$b' as r, :val as v",
+                [':val' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'r' => new \TypeDb\SqlValue\SqlInteger(1),
+                    's' => new \TypeDb\SqlValue\SqlInteger(2),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                "select 1 as r -- :a\$b\n, 2 as s /* :item\$price */"
+            )
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'a$b' => new \TypeDb\SqlValue\SqlInteger(1),
+                    'item$price' => new \TypeDb\SqlValue\SqlInteger(2),
+                    'foo$1' => new \TypeDb\SqlValue\SqlInteger(3),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                'select 1 as "a$b", 2 as [item$price], 3 as `foo$1`'
+            )
+        );
+    }
+
+    /**
      * @return array<string, array{bool}>
      */
     public static function stringify_fetch_modes(): array
