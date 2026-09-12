@@ -318,14 +318,14 @@ function bind_sql_value(SqlValue\SqlValue $value): string|float|int|null
 
 /**
  * Whether the byte is a valid SQLite identifier character. SQLite's tokenizer
- * accepts any byte >= 0x80 as part of an identifier, so UTF-8 multi-byte
- * characters must not terminate the scan. ctype_alnum() alone is
- * byte-class-based and rejects continuation bytes (and, under the C locale,
- * all bytes >= 128).
+ * treats `$`, `_`, alphanumerics, and any byte >= 0x80 as IdChar, so tokens
+ * like :a$b and UTF-8 names must not terminate mid-identifier. ctype_alnum()
+ * alone is byte-class-based and rejects `$`, continuation bytes (and, under
+ * the C locale, all bytes >= 128).
  */
 function is_sqlite_identifier_byte(string $byte): bool
 {
-    return ctype_alnum($byte) || $byte === '_' || ord($byte) >= 0x80;
+    return ctype_alnum($byte) || $byte === '_' || $byte === '$' || ord($byte) >= 0x80;
 }
 
 /**
