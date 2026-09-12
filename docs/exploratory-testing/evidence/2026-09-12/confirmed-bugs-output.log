@@ -1,0 +1,31 @@
+{
+    "non_ascii_named_parameter": {
+        "cafe_actual": {
+            "class": "TypeDb\\SqlValue\\SqlString",
+            "value": "1.5"
+        },
+        "pi_actual": {
+            "class": "TypeDb\\SqlValue\\SqlString",
+            "value": "3.14"
+        },
+        "sql_corruption_under_c_locale": {
+            "class": "PDOException",
+            "message": "SQLSTATE[HY000]: General error: 1 near \"as\": syntax error",
+            "rewritten_sql": "select CAST(:caf AS REAL)é as res"
+        },
+        "preflight_bypass_under_c_locale": {
+            "class": "PDOException",
+            "message": "SQLSTATE[HY000]: General error: 25 column index out of range"
+        }
+    },
+    "dollar_in_named_parameter": {
+        "actual": {
+            "class": "TypeDb\\SqlValue\\SqlString",
+            "value": "1.5"
+        },
+        "false_positive_exception": {
+            "class": "InvalidArgumentException",
+            "message": "SQLite named parameter \"$b\" is not supported; use a \":\"-prefixed name instead."
+        }
+    }
+}
