@@ -499,6 +499,30 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
                 break;
             }
 
+            if ($index < $length && $sql[$index] === '(') {
+                $paren_depth = 0;
+                $paren_index = $index;
+
+                while ($paren_index < $length) {
+                    if ($sql[$paren_index] === '(') {
+                        $paren_depth++;
+                    } elseif ($sql[$paren_index] === ')') {
+                        $paren_depth--;
+
+                        if ($paren_depth === 0) {
+                            $paren_index++;
+                            break;
+                        }
+                    }
+
+                    $paren_index++;
+                }
+
+                if ($paren_depth === 0) {
+                    $index = $paren_index;
+                }
+            }
+
             $parameter = substr($sql, $start, $index - $start);
             $name = substr($parameter, 1);
 
