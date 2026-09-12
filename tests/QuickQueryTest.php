@@ -1560,6 +1560,178 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_casts_float_values_bound_to_namespace_named_parameters()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['r' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :ns::param as r',
+                [':ns::param' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [['r' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :ns::param as r',
+                ['ns::param' => \TypeDb\to_sql(1.5)]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_casts_float_values_bound_to_multi_namespace_named_parameters()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['r' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query(
+                $connection,
+                'select :a::b::c as r',
+                [':a::b::c' => \TypeDb\to_sql(1.5)]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_rewrite_partial_names_inside_namespace_parameters()
+    {
+        $this->assertSame(
+            'select :ns::param as r',
+            \TypeDb\sqlite_float_parameter_sql(
+                'select :ns::param as r',
+                [':param' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertSame(
+            'select :ns::param as r',
+            \TypeDb\sqlite_float_parameter_sql(
+                'select :ns::param as r',
+                [':ns' => \TypeDb\to_sql(1.5)]
+            )
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_at_and_dollar_prefixed_namespace_parameters()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select @ns::param as r',
+                ['ns::param' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject @-prefixed namespace parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('@ns::param', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select $ns::param as r',
+                ['ns::param' => \TypeDb\to_sql(1.5)]
+            );
+
+            $this->fail('Expected quick_query() to reject $-prefixed namespace parameter.');
+        } catch (\InvalidArgumentException $error) {
+            $this->assertStringContainsString('$ns::param', $error->getMessage());
+            $this->assertStringContainsString(':', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_leaves_namespace_parameters_inside_literals_comments_and_quoted_identifiers_untouched()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [
+                [
+                    'r' => new \TypeDb\SqlValue\SqlString(':ns::param'),
+                    'v' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                "select ':ns::param' as r, :val as v",
+                [':val' => \TypeDb\to_sql(1.5)]
+            )
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'r' => new \TypeDb\SqlValue\SqlInteger(1),
+                    's' => new \TypeDb\SqlValue\SqlInteger(2),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                "select 1 as r -- :ns::param\n, 2 as s /* :pkg::sub::var */"
+            )
+        );
+
+        $this->assertEquals(
+            [
+                [
+                    'ns::param' => new \TypeDb\SqlValue\SqlInteger(1),
+                    'pkg::var' => new \TypeDb\SqlValue\SqlInteger(2),
+                    'a::b' => new \TypeDb\SqlValue\SqlInteger(3),
+                ],
+            ],
+            \TypeDb\quick_query(
+                $connection,
+                'select 1 as "ns::param", 2 as [pkg::var], 3 as `a::b`'
+            )
+        );
+    }
+
+    /**
      * @return array<string, array{bool}>
      */
     public static function stringify_fetch_modes(): array
