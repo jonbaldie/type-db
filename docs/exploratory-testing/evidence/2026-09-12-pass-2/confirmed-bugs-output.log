@@ -1,0 +1,27 @@
+=== Reproducing Confirmed Bugs (3 iterations) ===
+
+--- Run 1 ---
+1a. Float on :ns::param: returned TypeDb\SqlValue\SqlString (value: '1.5')
+1b. PDOException as expected: SQLSTATE[HY000]: General error: 1 unrecognized token: ":CAST(:param"
+1c. Bypassed validation to PDOException: SQLSTATE[HY000]: General error: 25 column index out of range
+2a. Float on :arr(key): returned TypeDb\SqlValue\SqlString (value: '1.5')
+2b. PDOException as expected: SQLSTATE[HY000]: General error: 1 near "(": syntax error
+2c. Bypassed validation to PDOException: SQLSTATE[HY000]: General error: 25 column index out of range
+
+--- Run 2 ---
+1a. Float on :ns::param: returned TypeDb\SqlValue\SqlString (value: '1.5')
+1b. PDOException as expected: SQLSTATE[HY000]: General error: 1 unrecognized token: ":CAST(:param"
+1c. Bypassed validation to PDOException: SQLSTATE[HY000]: General error: 25 column index out of range
+2a. Float on :arr(key): returned TypeDb\SqlValue\SqlString (value: '1.5')
+2b. PDOException as expected: SQLSTATE[HY000]: General error: 1 near "(": syntax error
+2c. Bypassed validation to PDOException: SQLSTATE[HY000]: General error: 25 column index out of range
+
+--- Run 3 ---
+1a. Float on :ns::param: returned TypeDb\SqlValue\SqlString (value: '1.5')
+1b. PDOException as expected: SQLSTATE[HY000]: General error: 1 unrecognized token: ":CAST(:param"
+1c. Bypassed validation to PDOException: SQLSTATE[HY000]: General error: 25 column index out of range
+2a. Float on :arr(key): returned TypeDb\SqlValue\SqlString (value: '1.5')
+2b. PDOException as expected: SQLSTATE[HY000]: General error: 1 near "(": syntax error
+2c. Bypassed validation to PDOException: SQLSTATE[HY000]: General error: 25 column index out of range
+
+=== All reproducers verified deterministically across 3 runs ===
