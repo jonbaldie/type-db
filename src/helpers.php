@@ -480,11 +480,23 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
         ) {
             $start = $index++;
 
-            while (
-                $index < $length
-                && is_sqlite_identifier_byte($sql[$index])
-            ) {
-                $index++;
+            while ($index < $length) {
+                if (is_sqlite_identifier_byte($sql[$index])) {
+                    $index++;
+                    continue;
+                }
+
+                if (
+                    $sql[$index] === ':'
+                    && $index + 2 < $length
+                    && $sql[$index + 1] === ':'
+                    && is_sqlite_identifier_byte($sql[$index + 2])
+                ) {
+                    $index += 2;
+                    continue;
+                }
+
+                break;
             }
 
             $parameter = substr($sql, $start, $index - $start);
