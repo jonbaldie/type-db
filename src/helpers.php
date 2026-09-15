@@ -114,9 +114,36 @@ function statement_column_kinds(PDOStatement $statement): array
 }
 
 /**
+ * Restore a result name after SQLite's internal float-parameter rewrite.
+ *
+ * @param list<array{rewritten: string, original: string}> $float_rewrites
+ */
+function sqlite_result_column_name(string $name, array $float_rewrites): string
+{
+    $seen = [];
+
+    foreach ($float_rewrites as $rewrite) {
+        $rewrite_key = $rewrite['rewritten'] . "\0" . $rewrite['original'];
+
+        if (isset($seen[$rewrite_key])) {
+            continue;
+        }
+
+        $seen[$rewrite_key] = true;
+        $name = str_replace($rewrite['rewritten'], $rewrite['original'], $name);
+    }
+
+    return $name;
+}
+
+/**
+ * @param list<array{rewritten: string, original: string}> $float_rewrites
  * @return list<string>
  */
-function statement_duplicate_column_names(PDOStatement $statement): array
+function statement_duplicate_column_names(
+    PDOStatement $statement,
+    array $float_rewrites = [],
+): array
 {
     $seen = [];
     $duplicates = [];
@@ -128,7 +155,7 @@ function statement_duplicate_column_names(PDOStatement $statement): array
             continue;
         }
 
-        $name = $meta['name'];
+        $name = sqlite_result_column_name((string) $meta['name'], $float_rewrites);
 
         if (isset($seen[$name])) {
             $duplicates[$name] = true;
@@ -143,14 +170,20 @@ function statement_duplicate_column_names(PDOStatement $statement): array
 /**
  * @param list<?string> $column_kinds
  * @param array<array-key, mixed> $row
+ * @param list<array{rewritten: string, original: string}> $float_rewrites
  * @return SqlValue\SqlValue[]
  */
-function row_sql_values(array $row, array $column_kinds): array
+function row_sql_values(
+    array $row,
+    array $column_kinds,
+    array $float_rewrites = [],
+): array
 {
     $mapped = [];
     $index = 0;
 
     foreach ($row as $column => $value) {
+        $column = sqlite_result_column_name((string) $column, $float_rewrites);
         $mapped[$column] = cell_sql_value($value, $column_kinds[$index] ?? null);
         $index++;
     }
@@ -331,11 +364,22 @@ function is_sqlite_identifier_byte(string $byte): bool
 /**
  * SQLite has no PDO parameter type for floats. Cast float placeholders in the
  * SQL expression so that SQLite receives a REAL value instead of text.
+ * When requested, generated casts receive an internal marker so result names
+ * can be restored without changing user-written literals or aliases.
  *
  * @param SqlValue\SqlValue[] $sql_values
+ * @param list<array{rewritten: string, original: string}> &$float_rewrites
+ * @param bool $mark_rewrites
  */
-function sqlite_float_parameter_sql(string $sql, array $sql_values): string
+function sqlite_float_parameter_sql(
+    string $sql,
+    array $sql_values,
+    array &$float_rewrites = [],
+    bool $mark_rewrites = false,
+): string
 {
+    $float_rewrites = [];
+
     // Keep integer keys aligned with bindValue()'s positional parameter indexes.
     // Re-indexing would let named values shift the values checked for "?".
     $values = $sql_values;
@@ -361,6 +405,7 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
 
     $result = '';
     $value_index = 0;
+    $rewrite_index = 0;
     $length = strlen($sql);
 
     for ($index = 0; $index < $length; $index++) {
@@ -466,9 +511,22 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
             $value_index = max($value_index, $parameter_index + 1);
             $value = $values[$parameter_index] ?? null;
 
-            $result .= $value instanceof SqlValue\SqlFloat
-                ? 'CAST(' . $parameter . ' AS REAL)'
-                : $parameter;
+            if ($value instanceof SqlValue\SqlFloat) {
+                $rewritten_parameter = 'CAST(' . $parameter . ' AS REAL)';
+                $rewritten_parameter .= match ($mark_rewrites) {
+                    true => ' /* type-db:float-rewrite-' . ++$rewrite_index . ' */',
+                    false => '',
+                };
+
+                $result .= $rewritten_parameter;
+                $float_rewrites[] = [
+                    'rewritten' => $rewritten_parameter,
+                    'original' => $parameter,
+                ];
+            } else {
+                $result .= $parameter;
+            }
+
             $index--;
             continue;
         }
@@ -530,9 +588,22 @@ function sqlite_float_parameter_sql(string $sql, array $sql_values): string
                 throw_unsupported_sqlite_named_parameter($parameter);
             }
 
-            $result .= isset($named_float_parameters[$name])
-                ? 'CAST(' . $parameter . ' AS REAL)'
-                : $parameter;
+            if (isset($named_float_parameters[$name])) {
+                $rewritten_parameter = 'CAST(' . $parameter . ' AS REAL)';
+                $rewritten_parameter .= match ($mark_rewrites) {
+                    true => ' /* type-db:float-rewrite-' . ++$rewrite_index . ' */',
+                    false => '',
+                };
+
+                $result .= $rewritten_parameter;
+                $float_rewrites[] = [
+                    'rewritten' => $rewritten_parameter,
+                    'original' => $parameter,
+                ];
+            } else {
+                $result .= $parameter;
+            }
+
             $index--;
             continue;
         }
@@ -568,8 +639,9 @@ function quick_query(
     array $sql_values = [],
 ): array
 {
+    $float_rewrites = [];
     $prepared_sql = $conn->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
-        ? sqlite_float_parameter_sql($sql, $sql_values)
+        ? sqlite_float_parameter_sql($sql, $sql_values, $float_rewrites, true)
         : $sql;
 
     // 1. prepare query
@@ -600,7 +672,7 @@ function quick_query(
     }
 
     // 3. interpret result
-    $duplicates = statement_duplicate_column_names($statement);
+    $duplicates = statement_duplicate_column_names($statement, $float_rewrites);
 
     if (count($duplicates) > 0) {
         throw new \RuntimeException(
@@ -618,7 +690,11 @@ function quick_query(
     $return = [];
 
     while (is_array($row = $statement->fetch(PDO::FETCH_ASSOC))) {
-        $return[] = row_sql_values($row, statement_column_kinds($statement));
+        $return[] = row_sql_values(
+            $row,
+            statement_column_kinds($statement),
+            $float_rewrites,
+        );
     }
 
     // 5. return full result

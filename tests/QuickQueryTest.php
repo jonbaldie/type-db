@@ -230,6 +230,78 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_preserves_unaliased_column_names_for_sqlite_float_parameters()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $connection = new \TypeDb\Connection($pdo);
+
+        $namedResult = \TypeDb\quick_query(
+            $connection,
+            'select :v',
+            [':v' => \TypeDb\to_sql(1.5)]
+        );
+
+        $positionalResult = \TypeDb\quick_query(
+            $connection,
+            'select ?',
+            [\TypeDb\to_sql(1.5)]
+        );
+
+        $multipleResult = \TypeDb\quick_query(
+            $connection,
+            'select :v, :w',
+            [':v' => \TypeDb\to_sql(1.5), ':w' => \TypeDb\to_sql(2.5)]
+        );
+
+        $aliasedResult = \TypeDb\quick_query(
+            $connection,
+            'select :v as v',
+            [':v' => \TypeDb\to_sql(1.5)]
+        );
+
+        $storageClassResult = \TypeDb\quick_query(
+            $connection,
+            'select typeof(?) as storage_class',
+            [\TypeDb\to_sql(1.5)]
+        );
+
+        $this->assertEquals(
+            [[':v' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            $namedResult
+        );
+
+        $this->assertEquals(
+            [['?' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            $positionalResult
+        );
+
+        $this->assertEquals(
+            [[
+                ':v' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                ':w' => new \TypeDb\SqlValue\SqlFloat(2.5),
+            ]],
+            $multipleResult
+        );
+
+        $this->assertEquals(
+            [['v' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            $aliasedResult
+        );
+
+        $this->assertEquals(
+            [['storage_class' => new \TypeDb\SqlValue\SqlString('real')]],
+            $storageClassResult
+        );
+    }
+
+    /**
+     * @test
+     */
     public function it_maps_stringified_numeric_columns_from_sql_types()
     {
         try {
