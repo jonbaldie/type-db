@@ -4,6 +4,25 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [v0.9.6] — 2026-09-18
+
+### Fixed
+- Map stringified SQLite infinities to `SqlFloat(±INF)` in `quick_query()` instead of silently returning `SqlFloat(0.0)` (#24, #30).
+- Count anonymous `?` placeholders past the highest `?NNN` placeholder assigned so far, matching SQLite's own numbering, so float rewriting no longer targets the wrong parameter (#25, #31).
+- Read each fetched row's own SQLite column kinds in `quick_query()` instead of reusing the first row's kinds for every row (#27, #32).
+- Preserve positional parameter indexes in `sqlite_float_parameter_sql()` when named parameters precede positional parameters in `$sql_values` (#28, #33).
+- Recognise SQLite named parameters that start with a digit (e.g. `:1a`) so their float values are rewritten instead of reaching SQLite as text (#29, #34).
+- Reject `@`- and `$`-prefixed SQLite named parameters up front instead of letting them reach PDO, which cannot bind them on current builds (#35, #37).
+- Recognise non-ASCII bytes as SQLite identifier characters in named parameter tokenization, matching SQLite's own tokenizer (#38, #42).
+- Recognise `$` as a SQLite identifier continuation character so named parameters like `:a$b` tokenize as one parameter (#39, #43).
+- Recognise SQLite's `::` namespace named parameter syntax so `:ns::param` tokenizes as one parameter (#40, #44).
+- Recognise SQLite's `(...)` array-index named parameter syntax so `:arr(key)` tokenizes as one parameter (#41, #45).
+- Restore original unaliased result column names for float columns instead of leaking the internal `CAST(...)` rewrite marker (#46, #47).
+- Match the `CAST(...)` rewrite marker case-insensitively when restoring result column names, so it is stripped correctly under `PDO::ATTR_CASE` (`CASE_LOWER`/`CASE_UPPER`) (#48, #49).
+
+### Documentation
+- Record exploratory testing findings and reproduction evidence for SQLite named-parameter tokenization and float rewrite edge cases (#38, #39, #40, #41, #48).
+
 ## [v0.9.5] — 2026-09-11
 
 ### Fixed
@@ -59,4 +78,5 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 [v0.9.3]: https://github.com/jonbaldie/type-db/compare/v0.9.2...v0.9.3
 [v0.9.4]: https://github.com/jonbaldie/type-db/compare/v0.9.3...v0.9.4
 [v0.9.5]: https://github.com/jonbaldie/type-db/compare/v0.9.4...v0.9.5
+[v0.9.6]: https://github.com/jonbaldie/type-db/compare/v0.9.5...v0.9.6
 
