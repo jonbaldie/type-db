@@ -1,0 +1,51 @@
+=== Replay 1 ===
+CASE_LOWER positional 'select ?':
+  Actual:   'cast(? as real) /* type-db:float-rewrite-1 */'
+  Expected: '?'
+CASE_LOWER named 'select :v':
+  Actual:   'cast(:v as real) /* type-db:float-rewrite-1 */'
+  Expected: ':v'
+CASE_UPPER positional 'select ?':
+  Actual:   'CAST(? AS REAL) /* TYPE-DB:FLOAT-REWRITE-1 */'
+  Expected: '?'
+CASE_UPPER named 'select :v':
+  Actual:   'CAST(:V AS REAL) /* TYPE-DB:FLOAT-REWRITE-1 */'
+  Expected: ':V'
+CASE_LOWER duplicate 'select ?, ?':
+  Actual:   Did NOT throw! Returned keys: ["cast(? as real) \/* type-db:float-rewrite-1 *\/","cast(? as real) \/* type-db:float-rewrite-2 *\/"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: ?)
+
+=== Replay 2 ===
+CASE_LOWER positional 'select ?':
+  Actual:   'cast(? as real) /* type-db:float-rewrite-1 */'
+  Expected: '?'
+CASE_LOWER named 'select :v':
+  Actual:   'cast(:v as real) /* type-db:float-rewrite-1 */'
+  Expected: ':v'
+CASE_UPPER positional 'select ?':
+  Actual:   'CAST(? AS REAL) /* TYPE-DB:FLOAT-REWRITE-1 */'
+  Expected: '?'
+CASE_UPPER named 'select :v':
+  Actual:   'CAST(:V AS REAL) /* TYPE-DB:FLOAT-REWRITE-1 */'
+  Expected: ':V'
+CASE_LOWER duplicate 'select ?, ?':
+  Actual:   Did NOT throw! Returned keys: ["cast(? as real) \/* type-db:float-rewrite-1 *\/","cast(? as real) \/* type-db:float-rewrite-2 *\/"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: ?)
+
+=== Replay 3 ===
+CASE_LOWER positional 'select ?':
+  Actual:   'cast(? as real) /* type-db:float-rewrite-1 */'
+  Expected: '?'
+CASE_LOWER named 'select :v':
+  Actual:   'cast(:v as real) /* type-db:float-rewrite-1 */'
+  Expected: ':v'
+CASE_UPPER positional 'select ?':
+  Actual:   'CAST(? AS REAL) /* TYPE-DB:FLOAT-REWRITE-1 */'
+  Expected: '?'
+CASE_UPPER named 'select :v':
+  Actual:   'CAST(:V AS REAL) /* TYPE-DB:FLOAT-REWRITE-1 */'
+  Expected: ':V'
+CASE_LOWER duplicate 'select ?, ?':
+  Actual:   Did NOT throw! Returned keys: ["cast(? as real) \/* type-db:float-rewrite-1 *\/","cast(? as real) \/* type-db:float-rewrite-2 *\/"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: ?)
+
