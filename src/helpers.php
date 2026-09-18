@@ -116,6 +116,11 @@ function statement_column_kinds(PDOStatement $statement): array
 /**
  * Restore a result name after SQLite's internal float-parameter rewrite.
  *
+ * Matching is case-insensitive because `PDO::ATTR_CASE` (`CASE_LOWER` /
+ * `CASE_UPPER`) normalizes the case of column names PDO reports before this
+ * function sees them, while the rewrite template is generated in a fixed
+ * case.
+ *
  * @param list<array{rewritten: string, original: string}> $float_rewrites
  */
 function sqlite_result_column_name(string $name, array $float_rewrites): string
@@ -130,7 +135,11 @@ function sqlite_result_column_name(string $name, array $float_rewrites): string
         }
 
         $seen[$rewrite_key] = true;
-        $name = str_replace($rewrite['rewritten'], $rewrite['original'], $name);
+        $name = preg_replace_callback(
+            '/' . preg_quote($rewrite['rewritten'], '/') . '/i',
+            static fn (): string => $rewrite['original'],
+            $name,
+        ) ?? $name;
     }
 
     return $name;

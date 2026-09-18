@@ -2044,6 +2044,83 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_restores_unaliased_float_column_names_under_pdo_attr_case_lower()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_LOWER);
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['?' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query($connection, 'select ?', [\TypeDb\to_sql(1.5)])
+        );
+
+        $this->assertEquals(
+            [[':v' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query($connection, 'select :v', [':v' => \TypeDb\to_sql(1.5)])
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_restores_unaliased_float_column_names_under_pdo_attr_case_upper()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_UPPER);
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [['?' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query($connection, 'select ?', [\TypeDb\to_sql(1.5)])
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_when_unaliased_float_columns_share_a_name_under_pdo_attr_case_lower()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_LOWER);
+        $connection = new \TypeDb\Connection($pdo);
+
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select ?, ?',
+                [\TypeDb\to_sql(1.5), \TypeDb\to_sql(2.5)]
+            );
+
+            $this->fail('Expected quick_query() to throw when unaliased float columns share a name.');
+        } catch (\RuntimeException $error) {
+            $message = $error->getMessage();
+
+            $this->assertStringContainsString('Failed to interpret query [', $message);
+            $this->assertStringContainsString(']: ', $message);
+            $this->assertStringContainsString('?', $message);
+            $this->assertStringContainsString('. SQL: select ?, ?', $message);
+        }
+    }
+
+    /**
      * @return array<string, array{bool}>
      */
     public static function stringify_fetch_modes(): array
