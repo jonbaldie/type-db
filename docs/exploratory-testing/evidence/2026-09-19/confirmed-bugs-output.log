@@ -1,0 +1,48 @@
+=== Replay 1 ===
+CASE_LOWER named 'select :PARAM':
+  Float actual key:   ':PARAM'
+  Float expected key: ':param'
+  Int actual key:     ':param'
+CASE_UPPER named 'select :param':
+  Float actual key:   ':param'
+  Float expected key: ':PARAM'
+  Int actual key:     ':PARAM'
+CASE_LOWER duplicate 'select :param, :PARAM' (int + float):
+  Actual:   Did NOT throw! Returned keys: [":param",":PARAM"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: :param)
+CASE_UPPER duplicate 'select :param, :PARAM' (float + int):
+  Actual:   Did NOT throw! Returned keys: [":param",":PARAM"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: :PARAM)
+
+=== Replay 2 ===
+CASE_LOWER named 'select :PARAM':
+  Float actual key:   ':PARAM'
+  Float expected key: ':param'
+  Int actual key:     ':param'
+CASE_UPPER named 'select :param':
+  Float actual key:   ':param'
+  Float expected key: ':PARAM'
+  Int actual key:     ':PARAM'
+CASE_LOWER duplicate 'select :param, :PARAM' (int + float):
+  Actual:   Did NOT throw! Returned keys: [":param",":PARAM"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: :param)
+CASE_UPPER duplicate 'select :param, :PARAM' (float + int):
+  Actual:   Did NOT throw! Returned keys: [":param",":PARAM"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: :PARAM)
+
+=== Replay 3 ===
+CASE_LOWER named 'select :PARAM':
+  Float actual key:   ':PARAM'
+  Float expected key: ':param'
+  Int actual key:     ':param'
+CASE_UPPER named 'select :param':
+  Float actual key:   ':param'
+  Float expected key: ':PARAM'
+  Int actual key:     ':PARAM'
+CASE_LOWER duplicate 'select :param, :PARAM' (int + float):
+  Actual:   Did NOT throw! Returned keys: [":param",":PARAM"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: :param)
+CASE_UPPER duplicate 'select :param, :PARAM' (float + int):
+  Actual:   Did NOT throw! Returned keys: [":param",":PARAM"]
+  Expected: Throws RuntimeException (Duplicate column names in result set: :PARAM)
+
