@@ -4,6 +4,14 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [v0.9.7] — 2026-09-19
+
+### Fixed
+- Preserve `PDO::ATTR_CASE` normalization when restoring result column names for unaliased named float parameters, instead of reverting to the parameter's original casing (#51, #53).
+
+### Documentation
+- Record exploratory testing findings and reproduction evidence for 2026-09-19 (#51, #52).
+
 ## [v0.9.6] — 2026-09-18
 
 ### Fixed
