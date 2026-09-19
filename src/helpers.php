@@ -119,7 +119,9 @@ function statement_column_kinds(PDOStatement $statement): array
  * Matching is case-insensitive because `PDO::ATTR_CASE` (`CASE_LOWER` /
  * `CASE_UPPER`) normalizes the case of column names PDO reports before this
  * function sees them, while the rewrite template is generated in a fixed
- * case.
+ * case. When restoring the parameter name, the matched parameter text from
+ * within the CAST expression is preserved so that the connection's case
+ * normalization is respected.
  *
  * @param list<array{rewritten: string, original: string}> $float_rewrites
  */
@@ -135,11 +137,26 @@ function sqlite_result_column_name(string $name, array $float_rewrites): string
         }
 
         $seen[$rewrite_key] = true;
-        $name = preg_replace_callback(
-            '/' . preg_quote($rewrite['rewritten'], '/') . '/i',
-            static fn (): string => $rewrite['original'],
-            $name,
-        ) ?? $name;
+        $prefix = 'CAST(';
+
+        if (
+            str_starts_with($rewrite['rewritten'], $prefix)
+            && substr($rewrite['rewritten'], strlen($prefix), strlen($rewrite['original'])) === $rewrite['original']
+        ) {
+            $suffix = substr($rewrite['rewritten'], strlen($prefix) + strlen($rewrite['original']));
+            $pattern = '/' . preg_quote($prefix, '/') . '(' . preg_quote($rewrite['original'], '/') . ')' . preg_quote($suffix, '/') . '/i';
+            $name = preg_replace_callback(
+                $pattern,
+                static fn (array $matches): string => (string) $matches[1],
+                $name,
+            ) ?? $name;
+        } else {
+            $name = preg_replace_callback(
+                '/' . preg_quote($rewrite['rewritten'], '/') . '/i',
+                static fn (): string => $rewrite['original'],
+                $name,
+            ) ?? $name;
+        }
     }
 
     return $name;
