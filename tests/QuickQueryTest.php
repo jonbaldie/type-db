@@ -2066,6 +2066,16 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
             [[':v' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
             \TypeDb\quick_query($connection, 'select :v', [':v' => \TypeDb\to_sql(1.5)])
         );
+
+        $this->assertEquals(
+            [[':param' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query($connection, 'select :PARAM', [':PARAM' => \TypeDb\to_sql(1.5)])
+        );
+
+        $this->assertEquals(
+            [[':otherparam' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query($connection, 'select :otherParam', [':otherParam' => \TypeDb\to_sql(1.5)])
+        );
     }
 
     /**
@@ -2085,6 +2095,16 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(
             [['?' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
             \TypeDb\quick_query($connection, 'select ?', [\TypeDb\to_sql(1.5)])
+        );
+
+        $this->assertEquals(
+            [[':PARAM' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query($connection, 'select :param', [':param' => \TypeDb\to_sql(1.5)])
+        );
+
+        $this->assertEquals(
+            [[':OTHERPARAM' => new \TypeDb\SqlValue\SqlFloat(1.5)]],
+            \TypeDb\quick_query($connection, 'select :otherParam', [':otherParam' => \TypeDb\to_sql(1.5)])
         );
     }
 
@@ -2117,6 +2137,84 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
             $this->assertStringContainsString(']: ', $message);
             $this->assertStringContainsString('?', $message);
             $this->assertStringContainsString('. SQL: select ?, ?', $message);
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_when_unaliased_named_columns_collide_by_case_under_pdo_attr_case_lower()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_LOWER);
+        $connection = new \TypeDb\Connection($pdo);
+
+        // Mixed int + float collision
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select :param, :PARAM',
+                [':param' => \TypeDb\to_sql(1), ':PARAM' => \TypeDb\to_sql(2.5)]
+            );
+            $this->fail('Expected quick_query() to throw on duplicate column names.');
+        } catch (\RuntimeException $error) {
+            $this->assertStringContainsString('Duplicate column names in result set: :param', $error->getMessage());
+        }
+
+        // Float + float collision
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select :param, :PARAM',
+                [':param' => \TypeDb\to_sql(1.5), ':PARAM' => \TypeDb\to_sql(2.5)]
+            );
+            $this->fail('Expected quick_query() to throw on duplicate column names.');
+        } catch (\RuntimeException $error) {
+            $this->assertStringContainsString('Duplicate column names in result set: :param', $error->getMessage());
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_when_unaliased_named_columns_collide_by_case_under_pdo_attr_case_upper()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_UPPER);
+        $connection = new \TypeDb\Connection($pdo);
+
+        // Mixed float + int collision
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select :param, :PARAM',
+                [':param' => \TypeDb\to_sql(1.5), ':PARAM' => \TypeDb\to_sql(2)]
+            );
+            $this->fail('Expected quick_query() to throw on duplicate column names.');
+        } catch (\RuntimeException $error) {
+            $this->assertStringContainsString('Duplicate column names in result set: :PARAM', $error->getMessage());
+        }
+
+        // Float + float collision
+        try {
+            \TypeDb\quick_query(
+                $connection,
+                'select :param, :PARAM',
+                [':param' => \TypeDb\to_sql(1.5), ':PARAM' => \TypeDb\to_sql(2.5)]
+            );
+            $this->fail('Expected quick_query() to throw on duplicate column names.');
+        } catch (\RuntimeException $error) {
+            $this->assertStringContainsString('Duplicate column names in result set: :PARAM', $error->getMessage());
         }
     }
 
