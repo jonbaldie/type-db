@@ -4,6 +4,11 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [v0.10.0] — 2026-09-22
+
+### Added
+- Add polymorphic unwrap, PDO representation, and PDO parameter type operations to the `SqlValue` implementations and route SQL conversion, binding, and parameter typing through them, preserving rejection of unsupported implementations and existing SQLite behavior (#59, #60).
+
 ## [v0.9.7] — 2026-09-19
 
 ### Fixed
@@ -87,4 +92,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 [v0.9.4]: https://github.com/jonbaldie/type-db/compare/v0.9.3...v0.9.4
 [v0.9.5]: https://github.com/jonbaldie/type-db/compare/v0.9.4...v0.9.5
 [v0.9.6]: https://github.com/jonbaldie/type-db/compare/v0.9.5...v0.9.6
+[v0.9.7]: https://github.com/jonbaldie/type-db/compare/v0.9.6...v0.9.7
+[v0.10.0]: https://github.com/jonbaldie/type-db/compare/v0.9.7...v0.10.0
 
