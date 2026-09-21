@@ -290,22 +290,15 @@ function from_sql(
     SqlValue\SqlValue $value
 ): string|float|int|null
 {
-    if ($value instanceof SqlValue\SqlString) {
-        return $value->value;
+    if (!is_callable([$value, 'unwrap'])) {
+        throw_unsupported_sql_value($value);
     }
 
-    if ($value instanceof SqlValue\SqlFloat) {
-        return $value->value;
-    }
+    return $value->unwrap();
+}
 
-    if ($value instanceof SqlValue\SqlInteger) {
-        return $value->value;
-    }
-
-    if ($value instanceof SqlValue\SqlNull) {
-        return null;
-    }
-
+function throw_unsupported_sql_value(SqlValue\SqlValue $value): never
+{
     throw new \InvalidArgumentException(
         sprintf('Unsupported SqlValue implementation: %s', $value::class)
     );
@@ -364,15 +357,15 @@ function c_locale_float_string(float $value, int $precision): string
  * rejected because SQLite cannot represent it.
  *
  * @param SqlValue\SqlValue $value
- * @return string|float|int|null
+ * @return mixed
  */
-function bind_sql_value(SqlValue\SqlValue $value): string|float|int|null
+function bind_sql_value(SqlValue\SqlValue $value): mixed
 {
-    if ($value instanceof SqlValue\SqlFloat) {
-        return round_trip_float_string($value->value);
+    if (!is_callable([$value, 'toPdoParameter'])) {
+        throw_unsupported_sql_value($value);
     }
 
-    return from_sql($value);
+    return $value->toPdoParameter();
 }
 
 /**
@@ -423,7 +416,7 @@ function sqlite_float_parameter_sql(
             $name = ltrim($string_key, ':');
             $named_parameters[$name] = true;
 
-            if ($value instanceof SqlValue\SqlFloat) {
+            if (is_float(from_sql($value))) {
                 $named_float_parameters[$name] = true;
             }
         }
@@ -535,9 +528,7 @@ function sqlite_float_parameter_sql(
                 ? (int) substr($sql, $number_start, $index - $number_start) - 1
                 : $value_index;
             $value_index = max($value_index, $parameter_index + 1);
-            $value = $values[$parameter_index] ?? null;
-
-            if ($value instanceof SqlValue\SqlFloat) {
+            if (array_key_exists($parameter_index, $values) && is_float(from_sql($values[$parameter_index]))) {
                 $rewritten_parameter = 'CAST(' . $parameter . ' AS REAL)';
                 $rewritten_parameter .= match ($mark_rewrites) {
                     true => ' /* type-db:float-rewrite-' . ++$rewrite_index . ' */',
@@ -642,15 +633,11 @@ function sqlite_float_parameter_sql(
 
 function sql_value_parameter_type(SqlValue\SqlValue $value): int
 {
-    if ($value instanceof SqlValue\SqlNull) {
-        return PDO::PARAM_NULL;
+    if (!is_callable([$value, 'pdoParameterType'])) {
+        throw_unsupported_sql_value($value);
     }
 
-    if ($value instanceof SqlValue\SqlInteger) {
-        return PDO::PARAM_INT;
-    }
-
-    return PDO::PARAM_STR;
+    return $value->pdoParameterType();
 }
 
 /**
