@@ -117,6 +117,36 @@ class RowHydratorTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_normalizes_column_names_under_pdo_attr_case()
+    {
+        $this->pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_UPPER);
+        $statement = $this->execute('select 1 as raw_id');
+
+        $rows = (new RowHydrator(
+            $statement,
+            static fn (string $name): string => str_replace('RAW_', '', $name),
+        ))->fetchAll();
+
+        $this->assertEquals([['ID' => new SqlInteger(1)]], $rows);
+    }
+
+    /**
+     * @test
+     */
+    public function it_rejects_column_names_that_collide_under_pdo_attr_case()
+    {
+        $this->pdo->setAttribute(\PDO::ATTR_CASE, \PDO::CASE_LOWER);
+        $statement = $this->execute("select 1 as A, 'x' as a");
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Duplicate column names in result set: a.');
+
+        new RowHydrator($statement, self::identity());
+    }
+
+    /**
+     * @test
+     */
     public function it_reads_each_rows_own_sqlite_storage_class()
     {
         $this->pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, true);

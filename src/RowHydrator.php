@@ -31,9 +31,9 @@ final class RowHydrator
     ) {
         $seen = [];
         $duplicates = [];
-        $column_count = $statement->columnCount();
+        $columnCount = $statement->columnCount();
 
-        for ($index = 0; $index < $column_count; $index++) {
+        for ($index = 0; $index < $columnCount; $index++) {
             $meta = $statement->getColumnMeta($index);
             if ($meta === false) {
                 continue;
@@ -74,9 +74,6 @@ final class RowHydrator
     }
 
     /**
-     * Keys come from the fetched row rather than the metadata names because
-     * `PDO::ATTR_CASE` normalizes fetched keys but not metadata names.
-     *
      * @param array<array-key, mixed> $row
      * @return array<string, SqlValue\SqlValue>
      */
