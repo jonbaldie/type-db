@@ -41,79 +41,6 @@ function throw_unsupported_sqlite_named_parameter(string $parameter): never
 
 
 /**
- * @param array<string, mixed>|false $meta
- */
-function column_result_kind(array|false $meta): ?string
-{
-    if ($meta === false) {
-        return null;
-    }
-
-    $native = $meta['native_type'] ?? null;
-    if (is_string($native)) {
-        $kind = kind_from_native_type($native);
-        if (is_string($kind)) {
-            return $kind;
-        }
-    }
-
-    $declared = $meta['sqlite:decl_type'] ?? null;
-    if (is_string($declared)) {
-        return kind_from_declared_type($declared);
-    }
-
-    return null;
-}
-
-function kind_from_declared_type(string $declared): ?string
-{
-    $upper = strtoupper($declared);
-
-    if (str_contains($upper, 'INT')) {
-        return 'integer';
-    }
-
-    if (str_contains($upper, 'CHAR') || str_contains($upper, 'CLOB') || str_contains($upper, 'TEXT')) {
-        return 'string';
-    }
-
-    if (str_contains($upper, 'BLOB')) {
-        return 'string';
-    }
-
-    if (str_contains($upper, 'REAL') || str_contains($upper, 'FLOA') || str_contains($upper, 'DOUB')) {
-        return 'float';
-    }
-
-    return null;
-}
-
-function kind_from_native_type(string $native): ?string
-{
-    return match (strtolower($native)) {
-        'integer', 'int', 'long', 'longlong' => 'integer',
-        'double', 'float', 'real' => 'float',
-        'string', 'blob', 'datetime', 'date', 'time', 'timestamp', 'var_string' => 'string',
-        default => null,
-    };
-}
-
-/**
- * @return list<?string>
- */
-function statement_column_kinds(PDOStatement $statement): array
-{
-    $kinds = [];
-    $column_count = $statement->columnCount();
-
-    for ($index = 0; $index < $column_count; $index++) {
-        $kinds[] = column_result_kind($statement->getColumnMeta($index));
-    }
-
-    return $kinds;
-}
-
-/**
  * Restore a result name after SQLite's internal float-parameter rewrite.
  *
  * Matching is case-insensitive because `PDO::ATTR_CASE` (`CASE_LOWER` /
@@ -160,103 +87,6 @@ function sqlite_result_column_name(string $name, array $float_rewrites): string
     }
 
     return $name;
-}
-
-/**
- * @param list<array{rewritten: string, original: string}> $float_rewrites
- * @return list<string>
- */
-function statement_duplicate_column_names(
-    PDOStatement $statement,
-    array $float_rewrites = [],
-): array
-{
-    $seen = [];
-    $duplicates = [];
-    $column_count = $statement->columnCount();
-
-    for ($index = 0; $index < $column_count; $index++) {
-        $meta = $statement->getColumnMeta($index);
-        if ($meta === false) {
-            continue;
-        }
-
-        $name = sqlite_result_column_name((string) $meta['name'], $float_rewrites);
-
-        if (isset($seen[$name])) {
-            $duplicates[$name] = true;
-        }
-
-        $seen[$name] = true;
-    }
-
-    return array_keys($duplicates);
-}
-
-/**
- * @param list<?string> $column_kinds
- * @param array<array-key, mixed> $row
- * @param list<array{rewritten: string, original: string}> $float_rewrites
- * @return SqlValue\SqlValue[]
- */
-function row_sql_values(
-    array $row,
-    array $column_kinds,
-    array $float_rewrites = [],
-): array
-{
-    $mapped = [];
-    $index = 0;
-
-    foreach ($row as $column => $value) {
-        $column = sqlite_result_column_name((string) $column, $float_rewrites);
-        $mapped[$column] = cell_sql_value($value, $column_kinds[$index] ?? null);
-        $index++;
-    }
-
-    return $mapped;
-}
-
-function cell_sql_value(mixed $value, ?string $kind): SqlValue\SqlValue
-{
-    if ($value === null) {
-        return new SqlValue\SqlNull();
-    }
-
-    if (is_int($value)) {
-        return new SqlValue\SqlInteger($value);
-    }
-
-    if (is_float($value)) {
-        return new SqlValue\SqlFloat($value);
-    }
-
-    if (is_string($value)) {
-        if ($kind === 'integer') {
-            return new SqlValue\SqlInteger((int) $value);
-        }
-
-        if ($kind === 'float') {
-            return new SqlValue\SqlFloat(stringified_float($value));
-        }
-
-        return new SqlValue\SqlString($value);
-    }
-
-    return new SqlValue\SqlNull();
-}
-
-/**
- * SQLite stringifies infinities as "INF" and "-INF", which a PHP float cast
- * turns into 0.0.
- */
-function stringified_float(string $value): float
-{
-    return match (strtoupper($value)) {
-        'INF', '+INF' => INF,
-        '-INF' => -INF,
-        default => (float) $value,
-    };
 }
 
 /**
@@ -684,32 +514,13 @@ function quick_query(
         throw_query_failure($statement, 'execute', $sql);
     }
 
-    // 3. interpret result
-    $duplicates = statement_duplicate_column_names($statement, $float_rewrites);
+    // 3. interpret result and turn result values into SqlValue objects
+    $hydrator = new RowHydrator(
+        $statement,
+        static fn (string $name): string => sqlite_result_column_name($name, $float_rewrites),
+        $sql,
+    );
 
-    if (count($duplicates) > 0) {
-        throw new \RuntimeException(
-            sprintf(
-                'Failed to interpret query [HY000/unknown]: Duplicate column names in result set: %s. SQL: %s',
-                implode(', ', $duplicates),
-                $sql,
-            )
-        );
-    }
-
-    // 4. turn result values into SqlValue objects. Column kinds are read
-    // after each fetch: SQLite reports the current row's storage class,
-    // which can differ between rows of the same column.
-    $return = [];
-
-    while (is_array($row = $statement->fetch(PDO::FETCH_ASSOC))) {
-        $return[] = row_sql_values(
-            $row,
-            statement_column_kinds($statement),
-            $float_rewrites,
-        );
-    }
-
-    // 5. return full result
-    return $return;
+    // 4. return full result
+    return $hydrator->fetchAll();
 }

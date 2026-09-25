@@ -4,6 +4,14 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Consolidate result set interpretation into a `RowHydrator` class that checks normalized column names for duplicates once and reads column metadata only for string cells, instead of reflecting every column's metadata on every fetched row (#58).
+
+### Removed
+- Remove the internal result helpers `column_result_kind()`, `kind_from_declared_type()`, `kind_from_native_type()`, `statement_column_kinds()`, `statement_duplicate_column_names()`, `row_sql_values()`, `cell_sql_value()`, and `stringified_float()` from the `TypeDb` namespace; their behavior now lives in `RowHydrator` (#58).
+
 ## [v0.10.0] — 2026-09-22
 
 ### Added
