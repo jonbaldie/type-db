@@ -150,12 +150,7 @@ final class SqlRewriter
                     : $value_index;
                 $value_index = max($value_index, $parameter_index + 1);
                 if (array_key_exists($parameter_index, $values) && is_float(from_sql($values[$parameter_index]))) {
-                    $rewritten_parameter = 'CAST(' . $parameter . ' AS REAL) /* type-db:float-rewrite-' . (count($rewrites) + 1) . ' */';
-                    $result .= $rewritten_parameter;
-                    $rewrites[] = [
-                        'rewritten' => $rewritten_parameter,
-                        'original' => $parameter,
-                    ];
+                    $result .= self::castToReal($parameter, $rewrites);
                 } else {
                     $result .= $parameter;
                 }
@@ -222,12 +217,7 @@ final class SqlRewriter
                 }
 
                 if (isset($named_float_parameters[$name])) {
-                    $rewritten_parameter = 'CAST(' . $parameter . ' AS REAL) /* type-db:float-rewrite-' . (count($rewrites) + 1) . ' */';
-                    $result .= $rewritten_parameter;
-                    $rewrites[] = [
-                        'rewritten' => $rewritten_parameter,
-                        'original' => $parameter,
-                    ];
+                    $result .= self::castToReal($parameter, $rewrites);
                 } else {
                     $result .= $parameter;
                 }
@@ -240,6 +230,23 @@ final class SqlRewriter
         }
 
         return new QueryPlan($result, $rewrites);
+    }
+
+    /**
+     * Each cast carries a numbered marker so that its result column name can
+     * be told apart from user-written SQL of the same shape.
+     *
+     * @param list<array{rewritten: string, original: string}> $rewrites
+     */
+    private static function castToReal(string $parameter, array &$rewrites): string
+    {
+        $rewritten = 'CAST(' . $parameter . ' AS REAL) /* type-db:float-rewrite-' . (count($rewrites) + 1) . ' */';
+        $rewrites[] = [
+            'rewritten' => $rewritten,
+            'original' => $parameter,
+        ];
+
+        return $rewritten;
     }
 
     /**

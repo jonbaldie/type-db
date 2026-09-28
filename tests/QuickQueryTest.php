@@ -1844,8 +1844,6 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
                 [':ns::arr(key::sub)' => \TypeDb\to_sql(2.5)]
             )
         );
-
-
     }
 
     /**

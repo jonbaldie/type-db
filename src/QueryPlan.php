@@ -79,26 +79,26 @@ final class QueryPlan
     }
 
     /**
+     * Match the rewritten text case-insensitively, capturing the parameter
+     * text inside it so the reported case is kept.
+     *
      * @return array{pattern: string, original: string}
      */
     private static function restoration(string $rewritten, string $original): array
     {
-        $prefix = 'CAST(';
+        $position = strpos($rewritten, $original);
 
-        if (
-            str_starts_with($rewritten, $prefix)
-            && substr($rewritten, strlen($prefix), strlen($original)) === $original
-        ) {
-            $suffix = substr($rewritten, strlen($prefix) + strlen($original));
-
+        if ($position === false) {
             return [
-                'pattern' => '/' . preg_quote($prefix, '/') . '(' . preg_quote($original, '/') . ')' . preg_quote($suffix, '/') . '/i',
+                'pattern' => '/' . preg_quote($rewritten, '/') . '/i',
                 'original' => $original,
             ];
         }
 
         return [
-            'pattern' => '/' . preg_quote($rewritten, '/') . '/i',
+            'pattern' => '/' . preg_quote(substr($rewritten, 0, $position), '/')
+                . '(' . preg_quote($original, '/') . ')'
+                . preg_quote(substr($rewritten, $position + strlen($original)), '/') . '/i',
             'original' => $original,
         ];
     }
