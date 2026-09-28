@@ -4,6 +4,14 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Encapsulate SQLite float-parameter rewriting and result column name restoration in a `SqlRewriter` that returns a `QueryPlan`, so `quick_query()` no longer threads rewrite state through by-reference arrays and skips column name restoration when nothing was rewritten (#55).
+
+### Removed
+- Remove the internal helpers `sqlite_float_parameter_sql()`, `sqlite_result_column_name()`, `is_sqlite_identifier_byte()`, and `throw_unsupported_sqlite_named_parameter()` from the `TypeDb` namespace; their behavior now lives in `SqlRewriter` and `QueryPlan` (#55).
+
 ## [v0.11.1] — 2026-09-28
 
 ### Documentation
