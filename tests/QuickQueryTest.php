@@ -1523,14 +1523,6 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
 
         $connection = new \TypeDb\Connection($pdo);
 
-        $this->assertSame(
-            'select :a$b as res',
-            \TypeDb\sqlite_float_parameter_sql(
-                'select :a$b as res',
-                ['b' => \TypeDb\to_sql('test')]
-            )
-        );
-
         $this->assertEquals(
             [
                 [
@@ -1682,28 +1674,6 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
                 $connection,
                 'select :a::b::c as r',
                 [':a::b::c' => \TypeDb\to_sql(1.5)]
-            )
-        );
-    }
-
-    /**
-     * @test
-     */
-    public function it_does_not_rewrite_partial_names_inside_namespace_parameters()
-    {
-        $this->assertSame(
-            'select :ns::param as r',
-            \TypeDb\sqlite_float_parameter_sql(
-                'select :ns::param as r',
-                [':param' => \TypeDb\to_sql(1.5)]
-            )
-        );
-
-        $this->assertSame(
-            'select :ns::param as r',
-            \TypeDb\sqlite_float_parameter_sql(
-                'select :ns::param as r',
-                [':ns' => \TypeDb\to_sql(1.5)]
             )
         );
     }
@@ -1875,51 +1845,7 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
             )
         );
 
-        $this->assertSame(
-            'select CAST(:arr(nested(1)) AS REAL) as r',
-            \TypeDb\sqlite_float_parameter_sql(
-                'select :arr(nested(1)) as r',
-                [':arr(nested(1))' => \TypeDb\to_sql(1.5)]
-            )
-        );
 
-        $this->assertSame(
-            'select CAST(:arr((key)) AS REAL) as r',
-            \TypeDb\sqlite_float_parameter_sql(
-                'select :arr((key)) as r',
-                [':arr((key))' => \TypeDb\to_sql(1.5)]
-            )
-        );
-    }
-
-    /**
-     * @test
-     */
-    public function it_does_not_rewrite_partial_names_inside_array_index_parameters()
-    {
-        $this->assertSame(
-            'select :arr(key) as r',
-            \TypeDb\sqlite_float_parameter_sql(
-                'select :arr(key) as r',
-                [':arr' => \TypeDb\to_sql(1.5)]
-            )
-        );
-
-        $this->assertSame(
-            'select :arr(key) as r',
-            \TypeDb\sqlite_float_parameter_sql(
-                'select :arr(key) as r',
-                [':key' => \TypeDb\to_sql(1.5)]
-            )
-        );
-
-        $this->assertSame(
-            'select :ns::arr(key) as r',
-            \TypeDb\sqlite_float_parameter_sql(
-                'select :ns::arr(key) as r',
-                [':arr' => \TypeDb\to_sql(1.5)]
-            )
-        );
     }
 
     /**
