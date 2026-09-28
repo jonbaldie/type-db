@@ -4,6 +4,11 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [v0.11.1] — 2026-09-28
+
+### Documentation
+- Record exploratory testing findings and reproduction evidence for 2026-09-26 (#65).
+
 ## [v0.11.0] — 2026-09-25
 
 ### Changed
@@ -103,4 +108,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 [v0.9.7]: https://github.com/jonbaldie/type-db/compare/v0.9.6...v0.9.7
 [v0.10.0]: https://github.com/jonbaldie/type-db/compare/v0.9.7...v0.10.0
 [v0.11.0]: https://github.com/jonbaldie/type-db/compare/v0.10.0...v0.11.0
-
+[v0.11.1]: https://github.com/jonbaldie/type-db/compare/v0.11.0...v0.11.1
