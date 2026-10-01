@@ -4,7 +4,7 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [v0.12.0] — 2026-10-01
 
 ### Changed
 - Encapsulate SQLite float-parameter rewriting and result column name restoration in a `SqlRewriter` that returns a `QueryPlan`, so `quick_query()` no longer threads rewrite state through by-reference arrays and skips column name restoration when nothing was rewritten (#55).
@@ -117,3 +117,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 [v0.10.0]: https://github.com/jonbaldie/type-db/compare/v0.9.7...v0.10.0
 [v0.11.0]: https://github.com/jonbaldie/type-db/compare/v0.10.0...v0.11.0
 [v0.11.1]: https://github.com/jonbaldie/type-db/compare/v0.11.0...v0.11.1
+[v0.12.0]: https://github.com/jonbaldie/type-db/compare/v0.11.1...v0.12.0
