@@ -7,6 +7,7 @@ use TypeDb\SqlValue\SqlFloat;
 use TypeDb\SqlValue\SqlInteger;
 use TypeDb\SqlValue\SqlNull;
 use TypeDb\SqlValue\SqlString;
+use TypeDb\SqlValue\SqlValue;
 
 class RowHydratorTest extends \PHPUnit\Framework\TestCase
 {
@@ -223,6 +224,57 @@ class RowHydratorTest extends \PHPUnit\Framework\TestCase
 
         $this->assertSame([], (new RowHydrator($statement, self::identity()))->fetchAll());
     }
+
+    /**
+     * @test
+     * @dataProvider stringified_driver_numbers
+     */
+    public function it_types_stringified_numbers_by_driver_native_type(string $nativeType, string $value, SqlValue $expected)
+    {
+        $this->pdo->setAttribute(\PDO::ATTR_STATEMENT_CLASS, [NativeTypeStatement::class, [$nativeType]]);
+        $statement = $this->execute('select ? as v');
+        $this->assertTrue($statement->execute([$value]));
+
+        $this->assertEquals([['v' => $expected]], (new RowHydrator($statement, self::identity()))->fetchAll());
+    }
+
+    /**
+     * @test
+     */
+    public function it_resolves_stringified_postgresql_nan()
+    {
+        $this->pdo->setAttribute(\PDO::ATTR_STATEMENT_CLASS, [NativeTypeStatement::class, ['float8']]);
+        $statement = $this->execute("select 'NaN' as v");
+
+        $value = (new RowHydrator($statement, self::identity()))->fetchAll()[0]['v'];
+
+        $this->assertInstanceOf(SqlFloat::class, $value);
+        $this->assertNan($value->value);
+    }
+
+    /**
+     * Native type names reported by pdo_pgsql and pdo_mysql's getColumnMeta().
+     *
+     * @return array<string, array{string, string, SqlValue}>
+     */
+    public static function stringified_driver_numbers(): array
+    {
+        return [
+            'pgsql int2' => ['int2', '1', new SqlInteger(1)],
+            'pgsql int4' => ['int4', '-2', new SqlInteger(-2)],
+            'pgsql int8' => ['int8', '9223372036854775807', new SqlInteger(PHP_INT_MAX)],
+            'pgsql oid' => ['oid', '2024', new SqlInteger(2024)],
+            'pgsql float4' => ['float4', '1.5', new SqlFloat(1.5)],
+            'pgsql float8' => ['float8', '0.1', new SqlFloat(0.1)],
+            'pgsql float8 infinity' => ['float8', 'Infinity', new SqlFloat(INF)],
+            'pgsql float8 negative infinity' => ['float8', '-Infinity', new SqlFloat(-INF)],
+            'pgsql numeric' => ['numeric', '1.50', new SqlString('1.50')],
+            'mysql TINY' => ['TINY', '1', new SqlInteger(1)],
+            'mysql SHORT' => ['SHORT', '2', new SqlInteger(2)],
+            'mysql INT24' => ['INT24', '3', new SqlInteger(3)],
+            'mysql NEWDECIMAL' => ['NEWDECIMAL', '3.25', new SqlString('3.25')],
+        ];
+    }
 }
 
 class MetaCountingStatement extends \PDOStatement
@@ -265,5 +317,29 @@ class EmptyRowPerAffectedRowStatement extends \PDOStatement
         }
 
         return parent::fetch($mode, $cursorOrientation, $cursorOffset);
+    }
+}
+
+/**
+ * Reports a fixed driver native type for every column, as pdo_pgsql and
+ * pdo_mysql do, in place of SQLite's per-row storage class.
+ */
+class NativeTypeStatement extends \PDOStatement
+{
+    protected function __construct(private readonly string $nativeType)
+    {
+    }
+
+    public function getColumnMeta(int $column): array|false
+    {
+        $meta = parent::getColumnMeta($column);
+        if ($meta === false) {
+            return false;
+        }
+
+        unset($meta['sqlite:decl_type']);
+        $meta['native_type'] = $this->nativeType;
+
+        return $meta;
     }
 }
