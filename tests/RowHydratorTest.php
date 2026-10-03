@@ -208,6 +208,21 @@ class RowHydratorTest extends \PHPUnit\Framework\TestCase
 
         $this->assertSame(3, $statement->metaCalls);
     }
+
+    /**
+     * @test
+     */
+    public function it_returns_no_rows_for_a_statement_without_result_columns()
+    {
+        $this->execute('create table r (x integer)');
+        $this->pdo->setAttribute(\PDO::ATTR_STATEMENT_CLASS, [EmptyRowPerAffectedRowStatement::class, []]);
+        $statement = $this->execute('insert into r values (1), (2)');
+        $this->assertSame([], $statement->fetch(\PDO::FETCH_ASSOC));
+
+        $statement = $this->execute('update r set x = x + 1');
+
+        $this->assertSame([], (new RowHydrator($statement, self::identity()))->fetchAll());
+    }
 }
 
 class MetaCountingStatement extends \PDOStatement
@@ -223,5 +238,32 @@ class MetaCountingStatement extends \PDOStatement
         $this->metaCalls++;
 
         return parent::getColumnMeta($column);
+    }
+}
+
+/**
+ * Mimics pdo_pgsql, which yields an empty array per affected row when a
+ * statement has no result columns.
+ */
+class EmptyRowPerAffectedRowStatement extends \PDOStatement
+{
+    private int $emptyRows = 0;
+
+    protected function __construct()
+    {
+    }
+
+    public function fetch(
+        int $mode = \PDO::FETCH_DEFAULT,
+        int $cursorOrientation = \PDO::FETCH_ORI_NEXT,
+        int $cursorOffset = 0,
+    ): mixed {
+        if ($this->columnCount() === 0 && $this->emptyRows < $this->rowCount()) {
+            $this->emptyRows++;
+
+            return [];
+        }
+
+        return parent::fetch($mode, $cursorOrientation, $cursorOffset);
     }
 }
