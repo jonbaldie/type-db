@@ -1,0 +1,33 @@
+--- replay 1
+1 pg boolean => [{"t":"SqlNull(NULL)","f":"SqlNull(NULL)"}]
+2 pg INF => 2 pg INF => PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "9e999" is out of range for type double precision
+2 pg NAN => 2 pg NAN => InvalidArgumentException: NAN cannot be represented by SQLite.
+2 pg raw INF read => [{"v":"SqlFloat(INF)","n":"SqlFloat(NAN)"}]
+3 pg insert => [[],[]]
+3 sqlite insert => []
+4 sqlite NULL_TO_STRING => [{"i":"SqlInteger(0)","f":"SqlFloat(0.0)"}]
+4 mysql NULL_TO_STRING => [{"i":"SqlInteger(0)","f":"SqlFloat(0.0)"}]
+5 pg STRINGIFY => [{"i":"SqlString('1')","b":"SqlString('2')","f":"SqlString('1.5')"}]
+5 mysql STRINGIFY => [{"t":"SqlString('1')","sm":"SqlString('2')","m":"SqlString('3')","i":"SqlInteger(4)"}]
+--- replay 2
+1 pg boolean => [{"t":"SqlNull(NULL)","f":"SqlNull(NULL)"}]
+2 pg INF => 2 pg INF => PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "9e999" is out of range for type double precision
+2 pg NAN => 2 pg NAN => InvalidArgumentException: NAN cannot be represented by SQLite.
+2 pg raw INF read => [{"v":"SqlFloat(INF)","n":"SqlFloat(NAN)"}]
+3 pg insert => [[],[]]
+3 sqlite insert => []
+4 sqlite NULL_TO_STRING => [{"i":"SqlInteger(0)","f":"SqlFloat(0.0)"}]
+4 mysql NULL_TO_STRING => [{"i":"SqlInteger(0)","f":"SqlFloat(0.0)"}]
+5 pg STRINGIFY => [{"i":"SqlString('1')","b":"SqlString('2')","f":"SqlString('1.5')"}]
+5 mysql STRINGIFY => [{"t":"SqlString('1')","sm":"SqlString('2')","m":"SqlString('3')","i":"SqlInteger(4)"}]
+--- replay 3
+1 pg boolean => [{"t":"SqlNull(NULL)","f":"SqlNull(NULL)"}]
+2 pg INF => 2 pg INF => PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "9e999" is out of range for type double precision
+2 pg NAN => 2 pg NAN => InvalidArgumentException: NAN cannot be represented by SQLite.
+2 pg raw INF read => [{"v":"SqlFloat(INF)","n":"SqlFloat(NAN)"}]
+3 pg insert => [[],[]]
+3 sqlite insert => []
+4 sqlite NULL_TO_STRING => [{"i":"SqlInteger(0)","f":"SqlFloat(0.0)"}]
+4 mysql NULL_TO_STRING => [{"i":"SqlInteger(0)","f":"SqlFloat(0.0)"}]
+5 pg STRINGIFY => [{"i":"SqlString('1')","b":"SqlString('2')","f":"SqlString('1.5')"}]
+5 mysql STRINGIFY => [{"t":"SqlString('1')","sm":"SqlString('2')","m":"SqlString('3')","i":"SqlInteger(4)"}]

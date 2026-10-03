@@ -17,6 +17,8 @@ Once you see how these types can be type-hinted throughout your codebase, you bo
 
 The connector works with any database driver compatible with the PDO abstraction layer. That means you can use it with your SQLite3, MySQL (and MariaDB), and PostgreSQL databases with ease. 
 
+Known driver-specific gaps found by exploratory testing on MySQL and PostgreSQL are recorded in [docs/exploratory-testing/2026-10-03-type-db.md](docs/exploratory-testing/2026-10-03-type-db.md).
+
 ## Installation
 
 ```bash

@@ -1,0 +1,29 @@
+mysql ti: TINY
+mysql si: SHORT
+mysql mi: INT24
+mysql i: LONG
+mysql f: FLOAT
+mysql de: NEWDECIMAL
+mysql y: YEAR
+pgsql a: int2 pdo_type=1
+pgsql b: int4 pdo_type=1
+pgsql c: int8 pdo_type=1
+pgsql d: float4 pdo_type=2
+pgsql e: float8 pdo_type=2
+pgsql f: numeric pdo_type=2
+pgsql g: bool pdo_type=5
+pgsql h: int4 pdo_type=1
+Array
+(
+    [native_type] => null
+    [pdo_type] => 0
+    [sqlite:decl_type] => INTEGER
+    [table] => z
+    [flags] => Array
+        (
+        )
+
+    [name] => n
+    [len] => -1
+    [precision] => 0
+)
