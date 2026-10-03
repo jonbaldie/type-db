@@ -158,8 +158,9 @@ final class RowHydrator
     private static function kindFromNativeType(string $native): ?string
     {
         return match (strtolower($native)) {
-            'integer', 'int', 'long', 'longlong' => 'integer',
-            'double', 'float', 'real' => 'float',
+            'integer', 'int', 'long', 'longlong', 'tiny', 'short', 'int24',
+            'int2', 'int4', 'int8', 'oid' => 'integer',
+            'double', 'float', 'real', 'float4', 'float8' => 'float',
             'string', 'blob', 'datetime', 'date', 'time', 'timestamp', 'var_string' => 'string',
             default => null,
         };
@@ -189,14 +190,15 @@ final class RowHydrator
     }
 
     /**
-     * SQLite stringifies infinities as "INF" and "-INF", which a PHP float cast
-     * turns into 0.0.
+     * SQLite stringifies infinities as "INF" and "-INF", and PostgreSQL as
+     * "Infinity", "-Infinity" and "NaN", which a PHP float cast turns into 0.0.
      */
     private static function stringifiedFloat(string $value): float
     {
         return match (strtoupper($value)) {
-            'INF', '+INF' => INF,
-            '-INF' => -INF,
+            'INF', '+INF', 'INFINITY' => INF,
+            '-INF', '-INFINITY' => -INF,
+            'NAN' => NAN,
             default => (float) $value,
         };
     }

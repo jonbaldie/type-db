@@ -2202,6 +2202,75 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Runs against PostgreSQL only when TYPEDB_PGSQL_DSN is set.
+     *
+     * @test
+     * @dataProvider stringify_fetch_modes
+     */
+    public function it_maps_postgresql_numeric_columns(bool $stringify)
+    {
+        $dsn = getenv('TYPEDB_PGSQL_DSN');
+        if (!is_string($dsn) || $dsn === '') {
+            $this->markTestSkipped('TYPEDB_PGSQL_DSN is not set.');
+        }
+
+        $pdo = new \PDO($dsn);
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, $stringify);
+
+        $this->assertEquals(
+            [[
+                'a' => new \TypeDb\SqlValue\SqlInteger(1),
+                'b' => new \TypeDb\SqlValue\SqlInteger(2),
+                'c' => new \TypeDb\SqlValue\SqlInteger(3),
+                'd' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                'e' => new \TypeDb\SqlValue\SqlFloat(0.1),
+                'f' => new \TypeDb\SqlValue\SqlFloat(-INF),
+                'g' => new \TypeDb\SqlValue\SqlString('1.50'),
+            ]],
+            (new \TypeDb\Connection($pdo))->quickQuery(
+                "select 1::int2 as a, 2::int4 as b, 3::int8 as c, 1.5::float4 as d, 0.1::float8 as e, '-Infinity'::float8 as f, 1.50::numeric as g"
+            )
+        );
+    }
+
+    /**
+     * Runs against MySQL only when TYPEDB_MYSQL_DSN is set, e.g.
+     * `mysql:host=127.0.0.1;port=3306;dbname=test;user=root;password=...`.
+     *
+     * @test
+     * @dataProvider stringify_fetch_modes
+     */
+    public function it_maps_mysql_numeric_columns(bool $stringify)
+    {
+        $dsn = getenv('TYPEDB_MYSQL_DSN');
+        if (!is_string($dsn) || $dsn === '') {
+            $this->markTestSkipped('TYPEDB_MYSQL_DSN is not set.');
+        }
+
+        $pdo = new \PDO($dsn);
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, $stringify);
+        $connection = new \TypeDb\Connection($pdo);
+        $connection->quickQuery(
+            'create temporary table type_db_mysql_numbers (t tinyint, sm smallint, m mediumint, i int, bi bigint, f float, d double, de decimal(5,2))'
+        );
+        $connection->quickQuery('insert into type_db_mysql_numbers values (1, 2, 3, 4, 5, 1.5, 2.5, 3.25)');
+
+        $this->assertEquals(
+            [[
+                't' => new \TypeDb\SqlValue\SqlInteger(1),
+                'sm' => new \TypeDb\SqlValue\SqlInteger(2),
+                'm' => new \TypeDb\SqlValue\SqlInteger(3),
+                'i' => new \TypeDb\SqlValue\SqlInteger(4),
+                'bi' => new \TypeDb\SqlValue\SqlInteger(5),
+                'f' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                'd' => new \TypeDb\SqlValue\SqlFloat(2.5),
+                'de' => new \TypeDb\SqlValue\SqlString('3.25'),
+            ]],
+            $connection->quickQuery('select t, sm, m, i, bi, f, d, de from type_db_mysql_numbers')
+        );
+    }
+
+    /**
      * @return array<string, array{bool}>
      */
     public static function stringify_fetch_modes(): array

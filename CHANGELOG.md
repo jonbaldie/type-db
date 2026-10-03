@@ -8,6 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 
 ### Fixed
 - Return no rows from `quick_query()` for statements without result columns, such as PostgreSQL `INSERT`, `UPDATE` and `DELETE` without `RETURNING`, which `pdo_pgsql` reported as one empty row per affected row (#74).
+- Hydrate PostgreSQL `int2`, `int4`, `int8`, `oid`, `float4` and `float8` columns and MySQL `tinyint`, `smallint` and `mediumint` columns as `SqlInteger`/`SqlFloat` under `PDO::ATTR_STRINGIFY_FETCHES`, as without it, including PostgreSQL `Infinity`, `-Infinity` and `NaN` (#76).
 
 ## [v0.12.1] — 2026-10-03
 
