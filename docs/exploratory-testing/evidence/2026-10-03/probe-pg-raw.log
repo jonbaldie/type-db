@@ -1,0 +1,207 @@
+--- run 1 (fresh pgsql connection, fresh table)
+typedb insert 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb update 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb delete 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb create table: array (
+)
+raw insert: columnCount / fetch: array (
+  0 => 0,
+  1 => 
+  array (
+  ),
+)
+raw insert fetchAll: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb select boolean: [{"id":"SqlInteger(1)","b":"SqlNull(NULL)"},{"id":"SqlInteger(2)","b":"SqlNull(NULL)"},{"id":"SqlInteger(3)","b":"SqlNull(NULL)"}]
+typedb select true literal: [{"t":"SqlNull(NULL)","f":"SqlNull(NULL)","cmp":"SqlNull(NULL)"}]
+raw boolean fetch: array (
+  0 => true,
+  1 => false,
+  2 => NULL,
+)
+typedb INF: PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "9e999" is out of range for type double precision
+typedb -INF: PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "-9e999" is out of range for type double precision
+typedb NAN: InvalidArgumentException: NAN cannot be represented by SQLite.
+raw PDO bind INF: 'ok'
+PHP Warning:  unexpected NAN value was coerced to string in <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php on line 37
+PHP Stack trace:
+PHP   1. {main}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:0
+PHP   2. show($label = 'raw PDO bind NAN', $f = class Closure { public $name = '{closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37}'; public $file = '<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php'; public $line = 37; public $static = ['pdo' => class PDO { ... }] }) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+PHP   3. {closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37-37}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:7
+PHP   4. PDOStatement->bindValue($param = 1, $value = NAN) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+
+Warning: unexpected NAN value was coerced to string in <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php on line 37
+
+Call Stack:
+    0.0002     505512   1. {main}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:0
+    0.0773    1270144   2. show($label = 'raw PDO bind NAN', $f = class Closure { public $name = '{closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37}'; public $file = '<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php'; public $line = 37; public $static = ['pdo' => class PDO { ... }] }) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+    0.0773    1270144   3. {closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37-37}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:7
+    0.0773    1271696   4. PDOStatement->bindValue($param = 1, $value = NAN) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+
+raw PDO bind NAN: 'ok'
+typedb read stored inf/nan: [{"f":"SqlFloat(INF)"},{"f":"SqlFloat(NAN)"}]
+--- run 2 (fresh pgsql connection, fresh table)
+typedb insert 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb update 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb delete 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb create table: array (
+)
+raw insert: columnCount / fetch: array (
+  0 => 0,
+  1 => 
+  array (
+  ),
+)
+raw insert fetchAll: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb select boolean: [{"id":"SqlInteger(1)","b":"SqlNull(NULL)"},{"id":"SqlInteger(2)","b":"SqlNull(NULL)"},{"id":"SqlInteger(3)","b":"SqlNull(NULL)"}]
+typedb select true literal: [{"t":"SqlNull(NULL)","f":"SqlNull(NULL)","cmp":"SqlNull(NULL)"}]
+raw boolean fetch: array (
+  0 => true,
+  1 => false,
+  2 => NULL,
+)
+typedb INF: PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "9e999" is out of range for type double precision
+typedb -INF: PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "-9e999" is out of range for type double precision
+typedb NAN: InvalidArgumentException: NAN cannot be represented by SQLite.
+raw PDO bind INF: 'ok'
+PHP Warning:  unexpected NAN value was coerced to string in <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php on line 37
+PHP Stack trace:
+PHP   1. {main}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:0
+PHP   2. show($label = 'raw PDO bind NAN', $f = class Closure { public $name = '{closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37}'; public $file = '<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php'; public $line = 37; public $static = ['pdo' => class PDO { ... }] }) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+PHP   3. {closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37-37}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:7
+PHP   4. PDOStatement->bindValue($param = 1, $value = NAN) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+
+Warning: unexpected NAN value was coerced to string in <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php on line 37
+
+Call Stack:
+    0.0002     505512   1. {main}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:0
+    0.1427    1309112   2. show($label = 'raw PDO bind NAN', $f = class Closure { public $name = '{closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37}'; public $file = '<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php'; public $line = 37; public $static = ['pdo' => class PDO { ... }] }) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+    0.1427    1309112   3. {closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37-37}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:7
+    0.1427    1310664   4. PDOStatement->bindValue($param = 1, $value = NAN) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+
+raw PDO bind NAN: 'ok'
+typedb read stored inf/nan: [{"f":"SqlFloat(INF)"},{"f":"SqlFloat(NAN)"}]
+--- run 3 (fresh pgsql connection, fresh table)
+typedb insert 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb update 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb delete 2 rows: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb create table: array (
+)
+raw insert: columnCount / fetch: array (
+  0 => 0,
+  1 => 
+  array (
+  ),
+)
+raw insert fetchAll: array (
+  0 => 
+  array (
+  ),
+  1 => 
+  array (
+  ),
+)
+typedb select boolean: [{"id":"SqlInteger(1)","b":"SqlNull(NULL)"},{"id":"SqlInteger(2)","b":"SqlNull(NULL)"},{"id":"SqlInteger(3)","b":"SqlNull(NULL)"}]
+typedb select true literal: [{"t":"SqlNull(NULL)","f":"SqlNull(NULL)","cmp":"SqlNull(NULL)"}]
+raw boolean fetch: array (
+  0 => true,
+  1 => false,
+  2 => NULL,
+)
+typedb INF: PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "9e999" is out of range for type double precision
+typedb -INF: PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "-9e999" is out of range for type double precision
+typedb NAN: InvalidArgumentException: NAN cannot be represented by SQLite.
+raw PDO bind INF: 'ok'
+PHP Warning:  unexpected NAN value was coerced to string in <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php on line 37
+PHP Stack trace:
+PHP   1. {main}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:0
+PHP   2. show($label = 'raw PDO bind NAN', $f = class Closure { public $name = '{closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37}'; public $file = '<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php'; public $line = 37; public $static = ['pdo' => class PDO { ... }] }) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+PHP   3. {closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37-37}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:7
+PHP   4. PDOStatement->bindValue($param = 1, $value = NAN) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+
+Warning: unexpected NAN value was coerced to string in <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php on line 37
+
+Call Stack:
+    0.0002     505512   1. {main}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:0
+    0.1940    1335616   2. show($label = 'raw PDO bind NAN', $f = class Closure { public $name = '{closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37}'; public $file = '<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php'; public $line = 37; public $static = ['pdo' => class PDO { ... }] }) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+    0.1940    1335616   3. {closure:<repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37-37}() <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:7
+    0.1940    1337168   4. PDOStatement->bindValue($param = 1, $value = NAN) <repo>/docs/exploratory-testing/evidence/2026-10-03/probe-pg-raw.php:37
+
+raw PDO bind NAN: 'ok'
+typedb read stored inf/nan: [{"f":"SqlFloat(INF)"},{"f":"SqlFloat(NAN)"}]

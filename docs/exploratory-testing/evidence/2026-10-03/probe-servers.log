@@ -1,0 +1,57 @@
+===== mysql
+readme create: []
+readme insert: []
+readme select: [{"id":"SqlInteger(1)","value":"SqlString('bar')"},{"id":"SqlInteger(2)","value":"SqlString('baz')"}]
+readme scalar: [{"id":"SqlInteger(1)","value":"SqlString('baz')"}]
+insert typed: []
+select typed: [{"i":"SqlInteger(9223372036854775807)","f":"SqlFloat(0.30000000000000004)","s":"SqlString('h\u00e9llo')","n":"SqlNull(NULL)","d":"SqlString('12.50')","b":"SqlInteger(1)","r":"SqlFloat(1.5)"}]
+float precision param echo: [{"v":"SqlFloat(0.30000000000000004)"}]
+float param bare: [{"v":"SqlString('1.5')"}]
+int param bare: [{"v":"SqlInteger(7)"}]
+null param bare: [{"v":"SqlNull(NULL)"}]
+INF insert: INF insert: PDOException: SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column 'f' at row 1
+-0.0 insert+read: [{"f":"SqlFloat(-0.0)"}]
+float where match: [{"c":"SqlInteger(1)"}]
+named params: [{"a":"SqlInteger(3)","b":"SqlString('x')"}]
+dup cols: dup cols: RuntimeException: Failed to interpret query [HY000/unknown]: Duplicate column names in result set: a. SQL: select 1 as a, 2 as a
+expr unaliased: [{"1 + 1":"SqlInteger(2)"}]
+syntax error: syntax error: PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' at line 1
+===== mysql-native
+readme create: []
+readme insert: []
+readme select: [{"id":"SqlInteger(1)","value":"SqlString('bar')"},{"id":"SqlInteger(2)","value":"SqlString('baz')"}]
+readme scalar: [{"id":"SqlInteger(1)","value":"SqlString('baz')"}]
+insert typed: []
+select typed: [{"i":"SqlInteger(9223372036854775807)","f":"SqlFloat(0.30000000000000004)","s":"SqlString('h\u00e9llo')","n":"SqlNull(NULL)","d":"SqlString('12.50')","b":"SqlInteger(1)","r":"SqlFloat(1.5)"}]
+float precision param echo: [{"v":"SqlFloat(0.30000000000000004)"}]
+float param bare: [{"v":"SqlString('1.5')"}]
+int param bare: [{"v":"SqlInteger(7)"}]
+null param bare: [{"v":"SqlNull(NULL)"}]
+INF insert: INF insert: PDOException: SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column 'f' at row 1
+-0.0 insert+read: [{"f":"SqlFloat(-0.0)"}]
+float where match: [{"c":"SqlInteger(1)"}]
+named params: [{"a":"SqlInteger(3)","b":"SqlString('x')"}]
+dup cols: dup cols: RuntimeException: Failed to interpret query [HY000/unknown]: Duplicate column names in result set: a. SQL: select 1 as a, 2 as a
+expr unaliased: [{"1 + 1":"SqlInteger(2)"}]
+syntax error: syntax error: PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '' at line 1
+===== pgsql
+readme create: []
+readme insert: [[],[]]
+readme select: [{"id":"SqlInteger(1)","value":"SqlString('bar')"},{"id":"SqlInteger(2)","value":"SqlString('baz')"}]
+readme scalar: [{"id":"SqlInteger(1)","value":"SqlString('baz')"}]
+insert typed: [[]]
+select typed: [{"i":"SqlInteger(9223372036854775807)","f":"SqlFloat(0.30000000000000004)","s":"SqlString('h\u00e9llo')","n":"SqlNull(NULL)","d":"SqlString('12.50')","b":"SqlNull(NULL)","r":"SqlFloat(1.5)"}]
+float precision param echo: [{"v":"SqlFloat(0.30000000000000004)"}]
+float param bare: [{"v":"SqlString('1.5')"}]
+int param bare: [{"v":"SqlString('7')"}]
+null param bare: [{"v":"SqlNull(NULL)"}]
+INF insert: INF insert: PDOException: SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  "9e999" is out of range for type double precision
+CONTEXT:  unnamed portal parameter $1 = '...'
+-0.0 insert+read: [{"f":"SqlFloat(-0.0)"}]
+float where match: [{"c":"SqlInteger(1)"}]
+named params: [{"a":"SqlString('3')","b":"SqlString('x')"}]
+dup cols: dup cols: RuntimeException: Failed to interpret query [HY000/unknown]: Duplicate column names in result set: a. SQL: select 1 as a, 2 as a
+expr unaliased: [{"?column?":"SqlInteger(2)"}]
+syntax error: syntax error: PDOException: SQLSTATE[42601]: Syntax error: 7 ERROR:  syntax error at end of input
+LINE 1: select * from
+                     ^
