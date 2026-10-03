@@ -199,6 +199,19 @@ function quick_query(
         $sql,
     );
 
+    // PDO::NULL_TO_STRING erases the distinction between SQL NULL and an empty
+    // string before hydration, so fetch with PDO's natural null handling.
+    $oracleNulls = $conn->pdo->getAttribute(PDO::ATTR_ORACLE_NULLS);
+    if ($oracleNulls === PDO::NULL_TO_STRING) {
+        $conn->pdo->setAttribute(PDO::ATTR_ORACLE_NULLS, PDO::NULL_NATURAL);
+
+        try {
+            return $hydrator->fetchAll();
+        } finally {
+            $conn->pdo->setAttribute(PDO::ATTR_ORACLE_NULLS, $oracleNulls);
+        }
+    }
+
     // 4. return full result
     return $hydrator->fetchAll();
 }

@@ -147,6 +147,41 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_preserves_sql_nulls_when_pdo_converts_them_to_strings()
+    {
+        try {
+            $pdo = new \PDO('sqlite::memory:');
+        } catch (\PDOException $error) {
+            $this->markTestSkipped($error->getMessage());
+        }
+
+        $pdo->exec('create table type_db_null_to_string (i integer, f real, label text)');
+        $pdo->exec("insert into type_db_null_to_string values (null, null, ''), (7, 1.5, '')");
+        $pdo->setAttribute(\PDO::ATTR_ORACLE_NULLS, \PDO::NULL_TO_STRING);
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [
+                [
+                    'i' => new \TypeDb\SqlValue\SqlNull(),
+                    'f' => new \TypeDb\SqlValue\SqlNull(),
+                    'label' => new \TypeDb\SqlValue\SqlString(''),
+                ],
+                [
+                    'i' => new \TypeDb\SqlValue\SqlInteger(7),
+                    'f' => new \TypeDb\SqlValue\SqlFloat(1.5),
+                    'label' => new \TypeDb\SqlValue\SqlString(''),
+                ],
+            ],
+            $connection->quickQuery('select i, f, label from type_db_null_to_string')
+        );
+
+        $this->assertSame(\PDO::NULL_TO_STRING, $pdo->getAttribute(\PDO::ATTR_ORACLE_NULLS));
+    }
+
+    /**
+     * @test
+     */
     public function it_returns_non_associative_data()
     {
         try {
