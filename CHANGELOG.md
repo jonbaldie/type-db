@@ -4,11 +4,12 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [v0.12.2] — 2026-10-03
 
 ### Fixed
-- Return no rows from `quick_query()` for statements without result columns, such as PostgreSQL `INSERT`, `UPDATE` and `DELETE` without `RETURNING`, which `pdo_pgsql` reported as one empty row per affected row (#74).
-- Hydrate PostgreSQL `int2`, `int4`, `int8`, `oid`, `float4` and `float8` columns and MySQL `tinyint`, `smallint` and `mediumint` columns as `SqlInteger`/`SqlFloat` under `PDO::ATTR_STRINGIFY_FETCHES`, as without it, including PostgreSQL `Infinity`, `-Infinity` and `NaN` (#76).
+- Return no rows from `quick_query()` for statements without result columns, such as PostgreSQL `INSERT`, `UPDATE` and `DELETE` without `RETURNING` (#74).
+- Preserve SQL NULL values when PDO is configured with `PDO::NULL_TO_STRING` (#75).
+- Hydrate stringified PostgreSQL and MySQL integer/floating-point values using driver type metadata, including PostgreSQL infinities and `NaN` (#76).
 
 ## [v0.12.1] — 2026-10-03
 
@@ -130,3 +131,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 [v0.11.1]: https://github.com/jonbaldie/type-db/compare/v0.11.0...v0.11.1
 [v0.12.0]: https://github.com/jonbaldie/type-db/compare/v0.11.1...v0.12.0
 [v0.12.1]: https://github.com/jonbaldie/type-db/compare/v0.12.0...v0.12.1
+[v0.12.2]: https://github.com/jonbaldie/type-db/compare/v0.12.1...v0.12.2
