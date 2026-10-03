@@ -4,6 +4,11 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Return no rows from `quick_query()` for statements without result columns, such as PostgreSQL `INSERT`, `UPDATE` and `DELETE` without `RETURNING`, which `pdo_pgsql` reported as one empty row per affected row (#74).
+
 ## [v0.12.1] — 2026-10-03
 
 ### Documentation

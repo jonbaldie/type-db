@@ -2143,6 +2143,30 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Runs against PostgreSQL only when TYPEDB_PGSQL_DSN is set, e.g.
+     * `pgsql:host=127.0.0.1;port=5432;dbname=postgres;user=postgres;password=...`.
+     *
+     * @test
+     */
+    public function it_returns_no_rows_for_postgresql_dml_without_returning()
+    {
+        $dsn = getenv('TYPEDB_PGSQL_DSN');
+        if (!is_string($dsn) || $dsn === '') {
+            $this->markTestSkipped('TYPEDB_PGSQL_DSN is not set.');
+        }
+
+        $connection = new \TypeDb\Connection(new \PDO($dsn));
+        $connection->quickQuery('create temp table r (x int)');
+
+        $this->assertSame(
+            [],
+            $connection->quickQuery('insert into r values (?), (?)', [\TypeDb\to_sql(1), \TypeDb\to_sql(2)])
+        );
+        $this->assertSame([], $connection->quickQuery('update r set x = x + 1'));
+        $this->assertSame([], $connection->quickQuery('delete from r'));
+    }
+
+    /**
      * @return array<string, array{bool}>
      */
     public static function stringify_fetch_modes(): array

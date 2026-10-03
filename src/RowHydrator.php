@@ -60,11 +60,18 @@ final class RowHydrator
     }
 
     /**
+     * A statement without result columns has no rows, though pdo_pgsql still
+     * yields an empty array per affected row.
+     *
      * @return list<array<string, SqlValue\SqlValue>>
      */
     public function fetchAll(): array
     {
         $rows = [];
+
+        if ($this->statement->columnCount() === 0) {
+            return $rows;
+        }
 
         while (is_array($row = $this->statement->fetch(PDO::FETCH_ASSOC))) {
             $rows[] = $this->hydrate($row);
