@@ -1,0 +1,20 @@
+2026-10-08T11:58:45Z
+src/Connection.php: OK
+src/helpers.php: OK
+src/QueryPlan.php: OK
+src/RowHydrator.php: OK
+src/SqlRewriter.php: OK
+src/SqlValue/SqlFloat.php: OK
+src/SqlValue/SqlInteger.php: OK
+src/SqlValue/SqlNull.php: OK
+src/SqlValue/SqlString.php: OK
+src/SqlValue/SqlValue.php: OK
+tests/FloatRoundTripTest.php: OK
+tests/QuickQueryTest.php: OK
+tests/RowHydratorTest.php: OK
+tests/SqlRewriterTest.php: OK
+tests/SqlValueTest.php: OK
+composer.json: OK
+composer.lock: OK
+Source/test/dependency comparison exit status: 0
+No tests launched; no mutations applied.

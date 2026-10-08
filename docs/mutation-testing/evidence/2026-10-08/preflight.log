@@ -1,0 +1,44 @@
+Working directory: /Users/jonathanbaldie/Code-2/github.com/jonbaldie/type-db
+Revision: 745d30be66028c1e7408514a863fcfa6a6306cad
+Branch: main (origin/main was one commit ahead in local tracking metadata)
+Initial git status --short: empty
+Initial staged/unstaged/relevant untracked changes: none
+No builds/tests/services/mutations launched.
+
+Initial observation (local uptime clock 12:56):
+$ uptime
+12:56 up 18 days, 23:53, 10 users, load averages: 6.20 7.12 7.10
+$ sysctl -n hw.logicalcpu hw.memsize
+8
+17179869184
+$ memory_pressure (last line)
+System-wide memory free percentage: 24%
+$ df -h . /tmp
+Both paths: /dev/disk3s5 460Gi total, 426Gi used, 3.7Gi available
+$ sysctl vm.swapusage kern.memorystatus_vm_pressure_level
+vm.swapusage: total = 9216.00M used = 8529.19M free = 686.81M (encrypted)
+kern.memorystatus_vm_pressure_level: 2
+These were sequential preflight commands, not an atomic sample.
+
+Recheck:
+$ date -u '+%Y-%m-%dT%H:%M:%SZ'
+2026-10-08T11:57:01Z
+$ uptime
+12:57 up 18 days, 23:54, 10 users, load averages: 6.03 6.97 7.05
+$ sysctl vm.swapusage kern.memorystatus_vm_pressure_level
+vm.swapusage: total = 9216.00M used = 8096.25M free = 1119.75M (encrypted)
+kern.memorystatus_vm_pressure_level: 2
+$ memory_pressure (last line)
+System-wide memory free percentage: 23%
+$ df -h . /tmp
+Both paths: /dev/disk3s5 460Gi total, 426Gi used, 3.9Gi available
+$ git status --porcelain=v1 --untracked-files=all
+(empty)
+$ git diff -- src tests composer.json composer.lock
+(empty)
+$ git diff --cached -- src tests composer.json composer.lock
+(empty)
+
+Preflight command groups exited 0; tool timeouts: 20–30 seconds.
+Stop reason: existing memory pressure warning exceeds the admission budget.
+No pass-owned build/test process or descendant existed to terminate.
