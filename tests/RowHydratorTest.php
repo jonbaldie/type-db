@@ -57,6 +57,50 @@ class RowHydratorTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
+    public function it_hydrates_native_booleans_as_integers_without_losing_null()
+    {
+        $statement = $this->createMock(\PDOStatement::class);
+        $statement->method('columnCount')->willReturn(1);
+        $statement->method('getColumnMeta')->willReturn(['name' => 'v', 'native_type' => 'bool']);
+        $statement->method('fetch')->willReturnOnConsecutiveCalls(['v' => true], ['v' => false], ['v' => null], false);
+
+        $this->assertEquals(
+            [['v' => new SqlInteger(1)], ['v' => new SqlInteger(0)], ['v' => new SqlNull()]],
+            (new RowHydrator($statement, self::identity()))->fetchAll()
+        );
+    }
+
+    /**
+     * @test
+     * @dataProvider unsupported_payloads
+     */
+    public function it_rejects_unsupported_payloads_instead_of_returning_null(mixed $value, string $type)
+    {
+        $statement = $this->createMock(\PDOStatement::class);
+        $statement->method('columnCount')->willReturn(1);
+        $statement->method('getColumnMeta')->willReturn(['name' => 'v']);
+        $statement->method('fetch')->willReturnOnConsecutiveCalls(['v' => $value], false);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unsupported PDO result type: ' . $type);
+
+        (new RowHydrator($statement, self::identity()))->fetchAll();
+    }
+
+    /**
+     * @return array<string, array{mixed, string}>
+     */
+    public static function unsupported_payloads(): array
+    {
+        return [
+            'array' => [[], 'array'],
+            'object' => [new \stdClass(), 'stdClass'],
+        ];
+    }
+
+    /**
+     * @test
+     */
     public function it_returns_no_rows_for_an_empty_result_set()
     {
         $statement = $this->execute('select 1 as id where 0');
@@ -260,6 +304,9 @@ class RowHydratorTest extends \PHPUnit\Framework\TestCase
     public static function stringified_driver_numbers(): array
     {
         return [
+            'pgsql bool true' => ['bool', '1', new SqlInteger(1)],
+            'pgsql bool false' => ['bool', '0', new SqlInteger(0)],
+            'pgsql bool false empty' => ['bool', '', new SqlInteger(0)],
             'pgsql int2' => ['int2', '1', new SqlInteger(1)],
             'pgsql int4' => ['int4', '-2', new SqlInteger(-2)],
             'pgsql int8' => ['int8', '9223372036854775807', new SqlInteger(PHP_INT_MAX)],

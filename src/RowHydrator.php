@@ -104,16 +104,20 @@ final class RowHydrator
 
     private function cell(mixed $value, int $index): SqlValue\SqlValue
     {
-        if (is_int($value)) {
-            return new SqlValue\SqlInteger($value);
+        if (is_int($value) || is_bool($value)) {
+            return new SqlValue\SqlInteger((int) $value);
         }
 
         if (is_float($value)) {
             return new SqlValue\SqlFloat($value);
         }
 
-        if (!is_string($value)) {
+        if ($value === null) {
             return new SqlValue\SqlNull();
+        }
+
+        if (!is_string($value)) {
+            throw new \RuntimeException('Unsupported PDO result type: ' . get_debug_type($value));
         }
 
         return match ($this->kind($index)) {
@@ -159,7 +163,7 @@ final class RowHydrator
     {
         return match (strtolower($native)) {
             'integer', 'int', 'long', 'longlong', 'tiny', 'short', 'int24',
-            'int2', 'int4', 'int8', 'oid' => 'integer',
+            'int2', 'int4', 'int8', 'oid', 'bool' => 'integer',
             'double', 'float', 'real', 'float4', 'float8' => 'float',
             'string', 'blob', 'datetime', 'date', 'time', 'timestamp', 'var_string' => 'string',
             default => null,
