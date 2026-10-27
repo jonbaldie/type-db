@@ -2178,6 +2178,66 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * @test
+     * @dataProvider stringify_fetch_modes
+     */
+    public function it_maps_sqlite_boolean_values(bool $stringify)
+    {
+        $pdo = new \PDO('sqlite::memory:');
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, $stringify);
+
+        $this->assertEquals(
+            [[
+                't' => new \TypeDb\SqlValue\SqlInteger(1),
+                'f' => new \TypeDb\SqlValue\SqlInteger(0),
+                'n' => new \TypeDb\SqlValue\SqlNull(),
+                'i' => new \TypeDb\SqlValue\SqlInteger(7),
+                's' => new \TypeDb\SqlValue\SqlString('text'),
+            ]],
+            (new \TypeDb\Connection($pdo))->quickQuery("select true as t, false as f, null as n, 7 as i, 'text' as s")
+        );
+    }
+
+    /**
+     * @test
+     * @dataProvider stringify_fetch_modes
+     */
+    public function it_maps_postgresql_boolean_values(bool $stringify)
+    {
+        $dsn = getenv('TYPEDB_PGSQL_DSN');
+        if (!is_string($dsn) || $dsn === '') {
+            $this->markTestSkipped('TYPEDB_PGSQL_DSN is not set.');
+        }
+
+        $pdo = new \PDO($dsn);
+        $pdo->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, $stringify);
+        $connection = new \TypeDb\Connection($pdo);
+
+        $this->assertEquals(
+            [[
+                't' => new \TypeDb\SqlValue\SqlInteger(1),
+                'f' => new \TypeDb\SqlValue\SqlInteger(0),
+                'n' => new \TypeDb\SqlValue\SqlNull(),
+                'i' => new \TypeDb\SqlValue\SqlInteger(7),
+                's' => new \TypeDb\SqlValue\SqlString('text'),
+            ]],
+            $connection->quickQuery("select true as t, false as f, null::boolean as n, 7 as i, 'text'::text as s")
+        );
+
+        $connection->quickQuery('create temp table type_db_booleans (id int, b boolean)');
+        $connection->quickQuery('insert into type_db_booleans values (1, true), (2, false), (3, null)');
+
+        $this->assertEquals(
+            [
+                ['id' => new \TypeDb\SqlValue\SqlInteger(1), 'b' => new \TypeDb\SqlValue\SqlInteger(1)],
+                ['id' => new \TypeDb\SqlValue\SqlInteger(2), 'b' => new \TypeDb\SqlValue\SqlInteger(0)],
+                ['id' => new \TypeDb\SqlValue\SqlInteger(3), 'b' => new \TypeDb\SqlValue\SqlNull()],
+            ],
+            $connection->quickQuery('select id, b from type_db_booleans order by id')
+        );
+    }
+
+    /**
      * Runs against PostgreSQL only when TYPEDB_PGSQL_DSN is set, e.g.
      * `pgsql:host=127.0.0.1;port=5432;dbname=postgres;user=postgres;password=...`.
      *
