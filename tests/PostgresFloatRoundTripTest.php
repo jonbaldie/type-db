@@ -27,6 +27,27 @@ class PostgresFloatRoundTripTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    /** @test */
+    public function custom_float_binding_is_preserved(): void
+    {
+        $dsn = getenv('TYPE_DB_POSTGRES_DSN');
+        if ($dsn === false) {
+            $this->markTestSkipped('Set TYPE_DB_POSTGRES_DSN to run PostgreSQL tests.');
+        }
+
+        $pdo = new \PDO($dsn, getenv('TYPE_DB_POSTGRES_USER') ?: null, getenv('TYPE_DB_POSTGRES_PASSWORD') ?: null);
+        $connection = new \TypeDb\Connection($pdo);
+        $value = new class(INF) extends \TypeDb\SqlValue\SqlFloat {
+            public function toPdoParameter(): string
+            {
+                return '42';
+            }
+        };
+
+        $result = $connection->quickQuery('select cast(? as double precision) as v', [$value])[0]['v'];
+        $this->assertSame(42.0, $result->value);
+    }
+
     /** @return array<string, array{0: float}> */
     public function floats(): array
     {
