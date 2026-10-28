@@ -131,7 +131,7 @@ function c_locale_float_string(float $value, int $precision): string
  */
 function bind_sql_value(SqlValue\SqlValue $value, bool $postgres = false): mixed
 {
-    if ($postgres && $value::class === SqlValue\SqlFloat::class && !is_finite($value->value)) {
+    if ($postgres && $value instanceof SqlValue\SqlFloat && $value::class === SqlValue\SqlFloat::class && !is_finite($value->value)) {
         if (is_nan($value->value)) {
             return 'NaN';
         }
