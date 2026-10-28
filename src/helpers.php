@@ -129,8 +129,16 @@ function c_locale_float_string(float $value, int $precision): string
  * @param SqlValue\SqlValue $value
  * @return mixed
  */
-function bind_sql_value(SqlValue\SqlValue $value): mixed
+function bind_sql_value(SqlValue\SqlValue $value, bool $postgres = false): mixed
 {
+    if ($postgres && $value instanceof SqlValue\SqlFloat && $value::class === SqlValue\SqlFloat::class && !is_finite($value->value)) {
+        if (is_nan($value->value)) {
+            return 'NaN';
+        }
+
+        return $value->value > 0 ? 'Infinity' : '-Infinity';
+    }
+
     if (!is_callable([$value, 'toPdoParameter'])) {
         throw_unsupported_sql_value($value);
     }
@@ -159,7 +167,8 @@ function quick_query(
     array $sql_values = [],
 ): array
 {
-    $plan = $conn->pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+    $driver = $conn->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+    $plan = $driver === 'sqlite'
         ? (new SqlRewriter())->rewrite($sql, $sql_values)
         : QueryPlan::unchanged($sql);
 
@@ -175,7 +184,7 @@ function quick_query(
         $parameter = is_int($key) ? $key + 1 : $key;
         $bound = $statement->bindValue(
             $parameter,
-            bind_sql_value($sql_value),
+            bind_sql_value($sql_value, $driver === 'pgsql'),
             sql_value_parameter_type($sql_value),
         );
 
