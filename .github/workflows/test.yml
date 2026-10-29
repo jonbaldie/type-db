@@ -21,6 +21,7 @@ jobs:
           --health-retries 5
     env:
       TYPE_DB_POSTGRES_DSN: 'pgsql:host=127.0.0.1;port=5432;dbname=postgres'
+      TYPEDB_PGSQL_DSN: 'pgsql:host=127.0.0.1;port=5432;dbname=postgres;user=postgres;password=postgres'
       TYPE_DB_POSTGRES_USER: postgres
       TYPE_DB_POSTGRES_PASSWORD: postgres
     steps:
