@@ -4,6 +4,12 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [v0.12.3] — 2026-10-29
+
+### Fixed
+- Hydrate PostgreSQL booleans as `SqlInteger` values and reject unsupported result payloads instead of silently returning `SqlNull` (#86).
+- Bind PostgreSQL nonfinite floats using PostgreSQL literals so they can round-trip, including `NaN` (#87).
+
 ## [v0.12.2] — 2026-10-03
 
 ### Fixed
@@ -132,3 +138,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 [v0.12.0]: https://github.com/jonbaldie/type-db/compare/v0.11.1...v0.12.0
 [v0.12.1]: https://github.com/jonbaldie/type-db/compare/v0.12.0...v0.12.1
 [v0.12.2]: https://github.com/jonbaldie/type-db/compare/v0.12.1...v0.12.2
+[v0.12.3]: https://github.com/jonbaldie/type-db/compare/v0.12.2...v0.12.3
