@@ -1,0 +1,30 @@
+RUN 1
+quickstart: [{"id":1,"value":"bar"},{"id":2,"value":"baz"}]
+reopened: [{"id":1,"value":"bar","amount":0.30000000000000004},{"id":2,"value":"baz","amount":null}]
+named float: [{"amount":1.5,"kind":"real"}]
+positional to named float: [{"amount":"1.5","kind":"text"}]
+numbered parameters: [{"second":2.5,"first":"x"}]
+duplicate exception: "RuntimeException"
+after error: [{"count":2}]
+corrected: [{"value":"corrected"}]
+corrected after reopen: [{"value":"corrected"}]
+RUN 2
+quickstart: [{"id":1,"value":"bar"},{"id":2,"value":"baz"}]
+reopened: [{"id":1,"value":"bar","amount":0.30000000000000004},{"id":2,"value":"baz","amount":null}]
+named float: [{"amount":1.5,"kind":"real"}]
+positional to named float: [{"amount":"1.5","kind":"text"}]
+numbered parameters: [{"second":2.5,"first":"x"}]
+duplicate exception: "RuntimeException"
+after error: [{"count":2}]
+corrected: [{"value":"corrected"}]
+corrected after reopen: [{"value":"corrected"}]
+RUN 3
+quickstart: [{"id":1,"value":"bar"},{"id":2,"value":"baz"}]
+reopened: [{"id":1,"value":"bar","amount":0.30000000000000004},{"id":2,"value":"baz","amount":null}]
+named float: [{"amount":1.5,"kind":"real"}]
+positional to named float: [{"amount":"1.5","kind":"text"}]
+numbered parameters: [{"second":2.5,"first":"x"}]
+duplicate exception: "RuntimeException"
+after error: [{"count":2}]
+corrected: [{"value":"corrected"}]
+corrected after reopen: [{"value":"corrected"}]
