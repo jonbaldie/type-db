@@ -9,7 +9,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 ## [v0.13.0] — 2026-11-01
 
 ### Changed
-- Reject mixed or mismatched SQLite placeholder and value styles before preparation, instead of accepting some mixed bindings that can corrupt values (#36).
+- **Breaking:** Reject mixed or mismatched SQLite placeholder and value styles before preparation. Some previously accepted bindings can corrupt values. Use one placeholder style per query and matching value keys (#36, #92).
+
+### Documentation
+- Record SQLite consumer journey testing and reproduction evidence (#91).
 
 ## [v0.12.3] — 2026-10-29
 
@@ -146,3 +149,4 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 [v0.12.1]: https://github.com/jonbaldie/type-db/compare/v0.12.0...v0.12.1
 [v0.12.2]: https://github.com/jonbaldie/type-db/compare/v0.12.1...v0.12.2
 [v0.12.3]: https://github.com/jonbaldie/type-db/compare/v0.12.2...v0.12.3
+[v0.13.0]: https://github.com/jonbaldie/type-db/compare/v0.12.3...v0.13.0
