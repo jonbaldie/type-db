@@ -6,6 +6,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 
 ## [Unreleased]
 
+## [v0.13.0] — 2026-11-01
+
 ### Changed
 - Reject mixed or mismatched SQLite placeholder and value styles before preparation, instead of accepting some mixed bindings that can corrupt values (#36).
 
