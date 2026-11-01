@@ -510,53 +510,16 @@ class QuickQueryTest extends \PHPUnit\Framework\TestCase
     /**
      * @test
      */
-    public function it_preserves_parameter_types_when_named_values_precede_positional_values()
+    public function it_rejects_named_values_mixed_with_positional_values()
     {
-        try {
-            $pdo = new \PDO('sqlite::memory:');
-        } catch (\PDOException $error) {
-            $this->markTestSkipped($error->getMessage());
-        }
+        $connection = new \TypeDb\Connection(new \PDO('sqlite::memory:'));
 
-        $connection = new \TypeDb\Connection($pdo);
-
-        $namedFloatBeforePositionalString = \TypeDb\quick_query(
-            $connection,
-            'select ? as pos, :name as named',
-            [
-                'name' => \TypeDb\to_sql(1.5),
-                0 => \TypeDb\to_sql('test'),
-            ]
-        );
-
-        $namedStringBeforePositionalFloat = \TypeDb\quick_query(
-            $connection,
-            'select ? as pos, :name as named',
-            [
-                'name' => \TypeDb\to_sql('test'),
-                0 => \TypeDb\to_sql(1.5),
-            ]
-        );
-
-        $this->assertEquals(
-            [
-                [
-                    'pos' => new \TypeDb\SqlValue\SqlString('test'),
-                    'named' => new \TypeDb\SqlValue\SqlFloat(1.5),
-                ],
-            ],
-            $namedFloatBeforePositionalString
-        );
-
-        $this->assertEquals(
-            [
-                [
-                    'pos' => new \TypeDb\SqlValue\SqlFloat(1.5),
-                    'named' => new \TypeDb\SqlValue\SqlString('test'),
-                ],
-            ],
-            $namedStringBeforePositionalFloat
-        );
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('binding');
+        \TypeDb\quick_query($connection, 'select ? as pos, :name as named', [
+            'name' => \TypeDb\to_sql(1.5),
+            0 => \TypeDb\to_sql('test'),
+        ]);
     }
 
     /**
