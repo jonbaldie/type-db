@@ -26,8 +26,12 @@ final class SqlRewriter
         $values = $sql_values;
         $named_float_parameters = [];
         $named_parameters = [];
+        $binding_styles = [];
+        $placeholder_style = null;
 
         foreach ($sql_values as $key => $value) {
+            $binding_styles[is_int($key) ? 'positional' : 'named'] = true;
+
             if (!is_int($key)) {
                 $string_key = (string) $key;
 
@@ -42,6 +46,10 @@ final class SqlRewriter
                     $named_float_parameters[$name] = true;
                 }
             }
+        }
+
+        if (isset($binding_styles['positional'], $binding_styles['named'])) {
+            throw new \InvalidArgumentException('SQLite binding values cannot mix positional and named keys.');
         }
 
         $result = '';
@@ -134,6 +142,10 @@ final class SqlRewriter
             }
 
             if ($character === '?') {
+                if ($placeholder_style === 'named' || isset($binding_styles['named'])) {
+                    throw new \InvalidArgumentException('SQLite binding requires positional placeholders and values or named placeholders and values.');
+                }
+                $placeholder_style = 'positional';
                 $start = $index;
                 $index++;
                 $number_start = $index;
@@ -161,9 +173,14 @@ final class SqlRewriter
 
             if (
                 ($character === ':' || $character === '@' || $character === '$')
+                && !($character === '$' && $index > 0 && self::isIdentifierByte($sql[$index - 1]))
                 && $index + 1 < $length
                 && self::isIdentifierByte($sql[$index + 1])
             ) {
+                if ($placeholder_style === 'positional' || isset($binding_styles['positional'])) {
+                    throw new \InvalidArgumentException('SQLite binding requires positional placeholders and values or named placeholders and values.');
+                }
+                $placeholder_style = 'named';
                 $start = $index++;
 
                 while ($index < $length) {

@@ -4,6 +4,11 @@ All notable changes to this project will be documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Reject mixed or mismatched SQLite placeholder and value styles before preparation, instead of accepting some mixed bindings that can corrupt values (#36).
+
 ## [v0.12.3] — 2026-10-29
 
 ### Fixed

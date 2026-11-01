@@ -53,12 +53,12 @@ class SqlRewriterTest extends \PHPUnit\Framework\TestCase
     public function it_leaves_sql_without_float_parameters_unchanged()
     {
         $plan = (new SqlRewriter())->rewrite(
-            'select ? as a, :b as b',
-            [\TypeDb\to_sql(1), 'b' => \TypeDb\to_sql('text')]
+            'select :a as a, :b as b',
+            ['a' => \TypeDb\to_sql(1), 'b' => \TypeDb\to_sql('text')]
         );
 
         $this->assertFalse($plan->hasRewrites());
-        $this->assertSame('select ? as a, :b as b', $plan->getPreparedSql());
+        $this->assertSame('select :a as a, :b as b', $plan->getPreparedSql());
         $this->assertSame('?', $plan->restoreColumnName('?'));
     }
 
@@ -130,7 +130,7 @@ class SqlRewriterTest extends \PHPUnit\Framework\TestCase
     {
         $plan = (new SqlRewriter())->rewrite(
             "select '?', \":f\", [?], `:f`, -- ?\n /* :f */ 1",
-            [\TypeDb\to_sql(1.5), ':f' => \TypeDb\to_sql(2.5)]
+            [':f' => \TypeDb\to_sql(2.5)]
         );
 
         $this->assertFalse($plan->hasRewrites());
