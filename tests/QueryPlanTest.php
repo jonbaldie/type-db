@@ -72,6 +72,15 @@ class QueryPlanTest extends \PHPUnit\Framework\TestCase
         $embedded = self::rewrite(':arr(' . $one['rewritten'] . ')', '2');
         yield 'parameter contains another marker' => [[$one, $embedded], $embedded['rewritten'], 'CAST(:arr(:p) AS REAL) /* type-db:float-rewrite-2 */'];
         yield 'outer replacement retains marker in capture' => [[$embedded, $one], $embedded['rewritten'], ':arr(:p)'];
+
+        $long = ':p' . str_repeat('x', 32700);
+        $longOne = self::rewrite($long, '1');
+        $longTwo = self::rewrite($long, '2');
+        $longNested = 'CAST(' . $longOne['rewritten'] . ' AS REAL) /* type-db:float-rewrite-2 */';
+        yield 'long nested ordered matches' => [[$longOne, $longTwo], $longNested, $long];
+        yield 'long earlier rule stays passed' => [[$longTwo, $longOne], $longNested, $longTwo['rewritten']];
+        yield 'long dynamically assembled marker' => [[$assemble, $longTwo],
+            'CAST(' . $long . ' AS REAL) /* type-db' . $assemble['rewritten'] . '-rewrite-2 */', $long];
     }
 
     public function testDeterministicDifferentialNames(): void
@@ -96,11 +105,10 @@ class QueryPlanTest extends \PHPUnit\Framework\TestCase
                 };
                 $name .= $fragment . ' + ';
             }
-            self::assertSame(
-                (new LegacyQueryPlan('', $rewrites))->restoreColumnName($name),
-                (new QueryPlan('', $rewrites))->restoreColumnName($name),
-                'trial ' . $trial,
-            );
+            $expected = (new LegacyQueryPlan('', $rewrites))->restoreColumnName($name);
+            $plan = new QueryPlan('', $rewrites);
+            self::assertSame($expected, $plan->restoreColumnName($name), 'cold trial ' . $trial);
+            self::assertSame($expected, $plan->restoreColumnName($name), 'warm trial ' . $trial);
         }
     }
 
@@ -157,22 +165,88 @@ class QueryPlanTest extends \PHPUnit\Framework\TestCase
         }
     }
 
+    public function testLongPatternsPreserveWarningsErrorsAndOrder(): void
+    {
+        $jit = ini_get('pcre.jit');
+        try {
+            foreach (['0', '1'] as $mode) {
+                ini_set('pcre.jit', $mode);
+                foreach ([1000, 16500, 20000, 32700] as $length) {
+                    $one = self::rewrite(':p' . $mode . str_repeat('x', $length), '1');
+                    $two = self::rewrite(':q' . $mode . str_repeat('y', $length), '2');
+                    $huge = self::rewrite(':' . str_repeat('z', 40000), '3');
+                    foreach ([[$one, $two], [$huge, $one, $two], [$one, $huge, $two], [$one, $two, $huge]] as $rewrites) {
+                        $legacy = new LegacyQueryPlan('', $rewrites);
+                        $plan = new QueryPlan('', $rewrites);
+                        foreach (['alias', $one['rewritten'], strtoupper($two['rewritten']),
+                            str_replace('AS REAL', 'AS TEXT', $one['rewritten'])] as $name) {
+                            $expected = self::outcome($legacy, $name);
+                            self::assertSame($expected, self::outcome($plan, $name));
+                            self::assertSame($expected, self::outcome($plan, $name));
+                        }
+                    }
+                }
+            }
+        } finally {
+            ini_set('pcre.jit', $jit);
+        }
+    }
+
+    public function testLongQuotedBytePatterns(): void
+    {
+        $jit = ini_get('pcre.jit');
+        try {
+            foreach (['0', '1'] as $mode) {
+                ini_set('pcre.jit', $mode);
+                foreach ([16500, 25000, 32700] as $bytes) {
+                    $parameter = ':p' . $mode . str_repeat("$\\/[]()\0\xff", 500);
+                    $rewrite = self::rewrite($parameter, '1');
+                    $base = new LegacyQueryPlan('', [$rewrite]);
+                    $patterns = (new ReflectionProperty($base, 'restorations'))->getValue($base);
+                    $parameter .= str_repeat('x', $bytes - strlen($patterns[0]['pattern']));
+                    $rewrite = self::rewrite($parameter, '1');
+                    $legacy = new LegacyQueryPlan('', [$rewrite]);
+                    $plan = new QueryPlan('', [$rewrite]);
+                    foreach (['alias', $rewrite['rewritten'], strtoupper($rewrite['rewritten'])] as $name) {
+                        $expected = self::outcome($legacy, $name);
+                        self::assertSame([], $expected[1]);
+                        self::assertSame(PREG_NO_ERROR, $expected[2]);
+                        self::assertSame($expected, self::outcome($plan, $name));
+                    }
+                }
+            }
+        } finally {
+            ini_set('pcre.jit', $jit);
+        }
+    }
+
+    public function testConstructionDoesNotCompileLongPatterns(): void
+    {
+        @preg_match('/[/', '');
+        $error = preg_last_error();
+        new QueryPlan('', [self::rewrite(':' . str_repeat('x', 40000), '1')]);
+        self::assertSame($error, preg_last_error());
+    }
+
     public function testLowPcreLimitsPreserveFailureBehavior(): void
     {
         $backtrack = ini_get('pcre.backtrack_limit');
         $recursion = ini_get('pcre.recursion_limit');
         $jit = ini_get('pcre.jit');
         try {
-            foreach (['0', '1', '2', '10'] as $limit) {
+            foreach (['0', '1', '2', '10', '4294967296', '4294967297'] as $limit) {
                 ini_set('pcre.jit', '0');
                 ini_set('pcre.backtrack_limit', $limit);
                 ini_set('pcre.recursion_limit', $limit);
-                $rewrites = [self::rewrite(':p' . $limit, '1'), self::rewrite(':q' . $limit, '2')];
-                foreach (['alias', $rewrites[0]['rewritten'], $rewrites[1]['rewritten']] as $name) {
-                    self::assertSame(
-                        self::outcome(new LegacyQueryPlan('', $rewrites), $name),
-                        self::outcome(new QueryPlan('', $rewrites), $name),
-                    );
+                foreach ([0, 16500, 32700] as $length) {
+                    $rewrites = [self::rewrite(':p' . $limit . str_repeat('x', $length), '1'),
+                        self::rewrite(':q' . $limit . str_repeat('y', $length), '2')];
+                    foreach (['alias', $rewrites[0]['rewritten'], $rewrites[1]['rewritten']] as $name) {
+                        self::assertSame(
+                            self::outcome(new LegacyQueryPlan('', $rewrites), $name),
+                            self::outcome(new QueryPlan('', $rewrites), $name),
+                        );
+                    }
                 }
             }
         } finally {
@@ -211,4 +285,99 @@ class QueryPlanTest extends \PHPUnit\Framework\TestCase
             ini_set('pcre.jit', $jit);
         }
     }
+
+    public function testWarmWarningsObserveTheSamePcreState(): void
+    {
+        $bad = self::rewrite(':' . str_repeat('x', 40000), '1');
+        $bad2 = self::rewrite(':' . str_repeat('y', 40000), '2');
+        $good = self::rewrite(':p', '3');
+        foreach ([[$bad], [$bad, $bad2], [$bad, $good, $bad2], [$good, $bad, $bad2], [$bad, $bad2, $good]] as $rewrites) {
+            $legacy = new LegacyQueryPlan('', $rewrites);
+            $plan = new QueryPlan('', $rewrites);
+            self::outcome($plan, 'warm');
+            $capture = static function (object $plan): array {
+                @preg_match('/[/', '');
+                $events = [];
+                set_error_handler(static function (int $severity, string $message) use (&$events): bool {
+                    $events[] = [$severity, $message, preg_last_error()];
+                    return true;
+                });
+                try {
+                    return [$plan->restoreColumnName('alias'), $events, preg_last_error()];
+                } finally {
+                    restore_error_handler();
+                }
+            };
+            self::assertSame($capture($legacy), $capture($plan));
+        }
+    }
+
+    public function testSamePlanAcrossLocaleAndIniChanges(): void
+    {
+        $locale = setlocale(LC_CTYPE, '0');
+        $jit = ini_get('pcre.jit');
+        $backtrack = ini_get('pcre.backtrack_limit');
+        $recursion = ini_get('pcre.recursion_limit');
+        $rewrite = self::rewrite(':Value' . str_repeat('x', 16500), '1');
+        $bad = self::rewrite(':' . str_repeat('y', 40000), '2');
+        $plan = new QueryPlan('', [$rewrite, $bad]);
+        $legacy = new LegacyQueryPlan('', [$rewrite, $bad]);
+        try {
+            foreach (['C', 'C.utf8', 'en_US.utf8', 'C'] as $nextLocale) {
+                if (setlocale(LC_CTYPE, $nextLocale) === false) {
+                    continue;
+                }
+                foreach (['0', '1', '0'] as $nextJit) {
+                    ini_set('pcre.jit', $nextJit);
+                    foreach (['1000000', '0', '4294967296', '2000000', '1000000'] as $limit) {
+                        ini_set('pcre.backtrack_limit', $limit);
+                        ini_set('pcre.recursion_limit', $limit);
+                        foreach (['alias', strtoupper($rewrite['rewritten']), 'alias'] as $name) {
+                            self::assertSame(self::outcome($legacy, $name), self::outcome($plan, $name));
+                        }
+                    }
+                }
+            }
+        } finally {
+            setlocale(LC_CTYPE, $locale);
+            ini_set('pcre.jit', $jit);
+            ini_set('pcre.backtrack_limit', $backtrack);
+            ini_set('pcre.recursion_limit', $recursion);
+        }
+    }
+
+    public function testWarningHandlerChangesLimitsDuringWarmRestoration(): void
+    {
+        $backtrack = ini_get('pcre.backtrack_limit');
+        $jit = ini_get('pcre.jit');
+        ini_set('pcre.jit', '0');
+        $bad = self::rewrite(':' . str_repeat('z', 40000), '1');
+        $good = self::rewrite(':coldInterpreter' . str_repeat('x', 16500), '2');
+        try {
+            $outcomes = [];
+            foreach ([LegacyQueryPlan::class, QueryPlan::class] as $class) {
+                ini_set('pcre.backtrack_limit', $backtrack);
+                $plan = new $class('', [$bad, $good]);
+                self::outcome($plan, 'warm');
+                $warnings = [];
+                set_error_handler(static function (int $severity, string $message) use (&$warnings): bool {
+                    $warnings[] = $message;
+                    ini_set('pcre.backtrack_limit', '0');
+                    return true;
+                });
+                try {
+                    $outcomes[] = [$plan->restoreColumnName($good['rewritten']), $warnings, preg_last_error()];
+                } finally {
+                    restore_error_handler();
+                }
+                ini_set('pcre.backtrack_limit', $backtrack);
+                self::assertSame(':coldInterpreter' . str_repeat('x', 16500), self::outcome($plan, $good['rewritten'])[0]);
+            }
+            self::assertSame($outcomes[0], $outcomes[1]);
+        } finally {
+            ini_set('pcre.backtrack_limit', $backtrack);
+            ini_set('pcre.jit', $jit);
+        }
+    }
+
 }

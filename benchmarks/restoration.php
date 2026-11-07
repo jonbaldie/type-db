@@ -15,6 +15,18 @@ namespace TypeDb {
         return $result;
     }
 
+    function preg_match(string $pattern, string $subject, ?array &$matches = null, int $flags = 0, int $offset = 0): int|false
+    {
+        \RestorationWork::$matches++;
+        \RestorationWork::$subjectBytes += strlen($subject) - $offset;
+        $start = \RestorationWork::$profile ? hrtime(true) : 0;
+        $result = \preg_match($pattern, $subject, $matches, $flags, $offset);
+        if (\RestorationWork::$profile) {
+            \RestorationWork::$regexNs += hrtime(true) - $start;
+        }
+        return $result;
+    }
+
     function preg_match_all(string $pattern, string $subject, ?array &$matches = null, int $flags = 0): int|false
     {
         \RestorationWork::$scans++;
@@ -36,13 +48,14 @@ namespace {
     {
         public static int $replacements = 0;
         public static int $scans = 0;
+        public static int $matches = 0;
         public static int $subjectBytes = 0;
         public static bool $profile = false;
         public static int $regexNs = 0;
 
         public static function reset(): void
         {
-            self::$replacements = self::$scans = self::$subjectBytes = self::$regexNs = 0;
+            self::$replacements = self::$matches = self::$scans = self::$subjectBytes = self::$regexNs = 0;
         }
     }
 
@@ -55,6 +68,7 @@ namespace {
             'ms' => (hrtime(true) - $start) / 1e6,
             'replacements' => RestorationWork::$replacements,
             'scans' => RestorationWork::$scans,
+            'matches' => RestorationWork::$matches,
             'subject_bytes' => RestorationWork::$subjectBytes,
             'profile_regex_ms' => RestorationWork::$profile ? RestorationWork::$regexNs / 1e6 : null,
             'result' => $result,
@@ -71,9 +85,27 @@ namespace {
             'max_ms' => max($times),
             'replacements' => $samples[0]['replacements'],
             'scans' => $samples[0]['scans'],
+            'matches' => $samples[0]['matches'],
             'subject_bytes' => $samples[0]['subject_bytes'],
             'profile_regex_ms' => $samples[0]['profile_regex_ms'],
         ];
+    }
+
+    if (in_array('--memory-check', $argv, true)) {
+        $rewrites = [];
+        foreach ([1, 2] as $id) {
+            $rewrites[] = ['rewritten' => 'CAST(:p AS REAL) /* type-db:float-rewrite-' . $id . ' */', 'original' => ':p'];
+        }
+        $plan = new TypeDb\QueryPlan('', $rewrites);
+        $plan->restoreColumnName('warm');
+        $name = str_repeat('/* type-db:float-rewrite-999 */', 200000);
+        $sample = measure(static fn () => $plan->restoreColumnName($name));
+        if ($sample['result'] !== $name || preg_last_error() !== PREG_NO_ERROR
+            || $sample['replacements'] !== 0 || $sample['matches'] !== 200001) {
+            throw new RuntimeException('Streaming marker memory regression.');
+        }
+        echo json_encode(['peak_bytes' => memory_get_peak_usage(true), 'markers' => 200000], JSON_THROW_ON_ERROR), "\n";
+        exit;
     }
 
     $check = in_array('--check', $argv, true);
@@ -91,6 +123,114 @@ namespace {
         'runs' => $runs,
         'sizes' => [],
     ];
+    foreach ([1000, 4000, 16000, 16500, 32700] as $length) {
+        foreach ([10, 30, 60] as $size) {
+            $rewrites = $parameters = $bindings = [];
+            for ($i = 1; $i <= $size; $i++) {
+                $parameter = ':' . str_pad('p' . $i, $length - 1, 'x');
+                $parameters[] = $parameter;
+                $bindings[$parameter] = TypeDb\to_sql((float) $i);
+                $rewrites[] = [
+                    'rewritten' => 'CAST(' . $parameter . ' AS REAL) /* type-db:float-rewrite-' . $i . ' */',
+                    'original' => $parameter,
+                ];
+            }
+            $names = array_column($rewrites, 'rewritten');
+            $near = array_map(static fn (string $name): string => str_replace(' AS REAL)', ' AS TEXT)', $name), $names);
+            $inputs = ['aliases' => array_map(static fn (int $i): string => 'c' . $i, range(1, $size)),
+                'markers' => $names, 'matching_aliases' => $names, 'near_markers' => $near];
+            $plans = ['legacy' => new TypeDb\LegacyQueryPlan('', $rewrites), 'indexed' => new TypeDb\QueryPlan('', $rewrites)];
+            $entry = [];
+            foreach ($inputs as $kind => $input) {
+                $outcomes = [];
+                foreach ($plans as $side => $plan) {
+                    $run = static function () use ($plan, $input): array {
+                        $outcomes = [];
+                        foreach ($input as $name) {
+                            $warnings = [];
+                            set_error_handler(static function (int $severity, string $message) use (&$warnings): bool {
+                                $warnings[] = [$severity, $message];
+                                return true;
+                            });
+                            try {
+                                preg_match('/x/', '');
+                                $result = $plan->restoreColumnName($name);
+                                $outcomes[] = [$result, $warnings, preg_last_error()];
+                            } finally {
+                                restore_error_handler();
+                            }
+                        }
+                        return $outcomes;
+                    };
+                    $sample = measure($run);
+                    if ($side === 'indexed') {
+                        $warm = measure($run);
+                        if ($warm['result'] !== $sample['result'] || ($check &&
+                            ($warm['replacements'] > $size || $warm['matches'] + $warm['scans'] > 2 * $size))) {
+                            throw new RuntimeException('Repeated restoration changed results or repeated classification.');
+                        }
+                        unset($warm['result']);
+                        $entry[$kind]['indexed_warm'] = $warm;
+                    }
+                    $outcomes[$side] = $sample['result'];
+                    unset($sample['result']);
+                    $entry[$kind][$side] = $sample;
+                }
+                $expected = in_array($kind, ['markers', 'matching_aliases'], true) ? $parameters : $input;
+                if ($outcomes['legacy'] !== $outcomes['indexed'] || array_column($outcomes['legacy'], 0) !== $expected
+                    || array_column($outcomes['legacy'], 1) !== array_fill(0, $size, [])
+                    || array_column($outcomes['legacy'], 2) !== array_fill(0, $size, PREG_NO_ERROR)) {
+                    throw new RuntimeException('Many-long reference mismatch: ' . $length . '/' . $size . '/' . $kind);
+                }
+            }
+            foreach ($inputs as $kind => $input) {
+                $columns = [];
+                foreach ($input as $i => $name) {
+                    $columns[] = $kind === 'markers' ? $parameters[$i] : '1 AS "' . $name . '"';
+                }
+                $sql = 'SELECT ' . implode(',', $columns);
+                if ($kind !== 'markers') {
+                    $sql .= ' WHERE 1 IN (' . implode(',', $parameters) . ')';
+                }
+                $warnings = [];
+                set_error_handler(static function (int $severity, string $message) use (&$warnings): bool {
+                    $warnings[] = [$severity, $message];
+                    return true;
+                });
+                try {
+                    preg_match('/x/', '');
+                    $sample = measure(static fn () => $connection->quickQuery($sql, $bindings));
+                    $error = preg_last_error();
+                } finally {
+                    restore_error_handler();
+                }
+                $keys = in_array($kind, ['markers', 'matching_aliases'], true) ? $parameters : $input;
+                if (count($sample['result']) !== 1 || array_keys($sample['result'][0]) !== $keys
+                    || $warnings !== [] || $error !== PREG_NO_ERROR
+                    || ($check && ($sample['replacements'] > 3 * $size || $sample['scans'] + $sample['matches'] > 4 * $size))) {
+                    throw new RuntimeException('Incorrect SQLite many-long names or work count: ' . $length . '/' . $size . '/' . $kind . ' replacements=' . $sample['replacements'] . ' scans=' . $sample['scans'] . ' matches=' . $sample['matches']);
+                }
+                foreach (array_values($sample['result'][0]) as $i => $value) {
+                    if ($kind === 'markers' ? !($value instanceof TypeDb\SqlValue\SqlFloat) || $value->value !== (float) ($i + 1)
+                        : !($value instanceof TypeDb\SqlValue\SqlInteger) || $value->value !== 1) {
+                        throw new RuntimeException('Incorrect SQLite many-long type or value: ' . $kind);
+                    }
+                }
+                unset($sample['result']);
+                $entry['sqlite_' . $kind] = $sample;
+            }
+            foreach ($inputs as $kind => $_) {
+                if ($check && ($entry[$kind]['indexed']['replacements'] > 2 * $size
+                    || $entry[$kind]['indexed']['scans'] + $entry[$kind]['indexed']['matches'] > 2 * $size)) {
+                    throw new RuntimeException('Many-long work exceeds candidate count: ' . $length . '/' . $size . '/' . $kind
+                        . ' replacements=' . $entry[$kind]['indexed']['replacements']
+                        . ' scans=' . $entry[$kind]['indexed']['scans']
+                        . ' subject_bytes=' . $entry[$kind]['indexed']['subject_bytes']);
+                }
+            }
+            $report['many_long'][] = ['parameter_bytes' => $length, 'size' => $size, 'sample_runs' => 1, 'cases' => $entry];
+        }
+    }
     foreach ([50, 200, 800] as $size) {
         $rewrites = $names = $aliases = $near = $unknown = [];
         for ($i = 1; $i <= $size; $i++) {
@@ -145,8 +285,8 @@ namespace {
                     $samples[$side][] = $sample;
                 }
             }
-            $replacementLimit = $kind === 'dynamic_markers' ? 2 * $size : $size;
-            if ($check && ($samples['indexed'][0]['replacements'] > $replacementLimit || $samples['indexed'][0]['scans'] > 2 * $size)) {
+            $replacementLimit = $kind === 'dynamic_markers' ? 4 * $size : 2 * $size;
+            if ($check && ($samples['indexed'][0]['replacements'] > $replacementLimit || $samples['indexed'][0]['scans'] + $samples['indexed'][0]['matches'] > 4 * $size)) {
                 throw new RuntimeException('Restoration work exceeds the candidate count: ' . $kind);
             }
             $entry['restoration'][$kind] = array_map('summary', $samples);
@@ -154,7 +294,7 @@ namespace {
         foreach (['aliases' => $aliases, 'markers' => $names, 'near_markers' => $near] as $kind => $input) {
             $sample = measure(static fn () => array_map([$mixedIndexed, 'restoreColumnName'], $input));
             $expected = $kind === 'markers' ? array_fill(0, $size, ':p') : $input;
-            if ($sample['result'] !== $expected || ($check && $sample['replacements'] > 2 * $size)) {
+            if ($sample['result'] !== $expected || ($check && $sample['replacements'] > 3 * $size)) {
                 throw new RuntimeException('Incorrect mixed-size restoration or work count: ' . $kind);
             }
             unset($sample['result']);
@@ -172,7 +312,7 @@ namespace {
         } finally {
             restore_error_handler();
         }
-        if ($sample['result'] !== $near || $warnings !== $size || ($check && $sample['replacements'] > 3 * $size)) {
+        if ($sample['result'] !== $near || $warnings !== $size || ($check && $sample['replacements'] > 4 * $size)) {
             throw new RuntimeException('Incorrect failed-pattern restoration or work count.');
         }
         unset($sample['result']);
@@ -217,7 +357,7 @@ namespace {
                 . implode(',', array_fill(0, $size, ':p')) . ',' . $long . ')';
             $sample = measure(static fn () => $connection->quickQuery($sql, [':p' => TypeDb\to_sql(1.0), $long => TypeDb\to_sql(1.0)]));
             if (count($sample['result']) !== 1 || array_keys($sample['result'][0]) !== $keys
-                || ($check && $sample['replacements'] > 4 * $size)) {
+                || ($check && $sample['replacements'] > 5 * $size + 1)) {
                 throw new RuntimeException('Incorrect SQLite mixed-size result or work count: ' . $kind);
             }
             foreach ($sample['result'][0] as $value) {

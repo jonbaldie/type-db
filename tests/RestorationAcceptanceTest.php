@@ -10,6 +10,52 @@ use TypeDb\SqlValue\SqlString;
 
 class RestorationAcceptanceTest extends TestCase
 {
+    /** @dataProvider manyLongParameters */
+    public function testManyLongFloatParameters(int $length, int $mode, string $kind): void
+    {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->setAttribute(PDO::ATTR_CASE, $mode);
+        $columns = $parameters = $bindings = $expected = [];
+        for ($i = 1; $i <= 30; $i++) {
+            $parameter = ':Value' . $i . str_repeat('x', $length);
+            $parameters[] = $parameter;
+            $bindings[$parameter] = new SqlFloat(1.0);
+            $name = match ($kind) {
+                'aliases' => 'Column' . $i,
+                'matches' => 'CAST(' . $parameter . ' AS REAL) /* type-db:float-rewrite-' . $i . ' */',
+                'near matches' => 'CAST(:Other' . $i . ' AS REAL) /* type-db:float-rewrite-' . $i . ' */',
+                default => $parameter . ' + ' . $i,
+            };
+            $columns[] = $kind === 'expressions' ? $name : '1 AS "' . $name . '"';
+            if ($kind === 'matches') {
+                $name = $parameter;
+            }
+            $name = match ($mode) {
+                PDO::CASE_LOWER => strtolower($name),
+                PDO::CASE_UPPER => strtoupper($name),
+                default => $name,
+            };
+            $expected[$name] = $kind === 'expressions' ? new SqlFloat(1.0 + $i) : new SqlInteger(1);
+        }
+        $sql = 'SELECT ' . implode(',', $columns);
+        if ($kind !== 'expressions') {
+            $sql .= ' WHERE 1 IN (' . implode(',', $parameters) . ')';
+        }
+        self::assertEquals([$expected], (new Connection($pdo))->quickQuery($sql, $bindings));
+        self::assertSame(PREG_NO_ERROR, preg_last_error());
+    }
+
+    public static function manyLongParameters(): iterable
+    {
+        foreach ([1000, 4000, 16000, 16500, 32680] as $length) {
+            foreach ([PDO::CASE_NATURAL, PDO::CASE_LOWER, PDO::CASE_UPPER] as $mode) {
+                foreach (['aliases', 'matches', 'near matches', 'expressions'] as $kind) {
+                    yield $length . '/' . $mode . '/' . $kind => [$length, $mode, $kind];
+                }
+            }
+        }
+    }
+
     public function testLongFloatParameterWithMarkerBearingAliases(): void
     {
         $long = ':' . str_repeat('x', 1000);

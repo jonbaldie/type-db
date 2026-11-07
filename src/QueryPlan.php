@@ -14,8 +14,6 @@ namespace TypeDb;
  */
 final class QueryPlan
 {
-    private const MAX_INDEXED_PATTERN_BYTES = 1024;
-
     /** @var list<array{pattern: string, original: string, mayCreateMarker: bool}> */
     private array $restorations = [];
 
@@ -24,6 +22,8 @@ final class QueryPlan
 
     /** @var array<int, true> */
     private array $always = [];
+
+    private ?string $classifiedContext = null;
 
     /**
      * Build plans with SqlRewriter::rewrite() or QueryPlan::unchanged().
@@ -66,11 +66,7 @@ final class QueryPlan
                 continue;
             }
 
-            if (strlen($restoration['pattern']) > self::MAX_INDEXED_PATTERN_BYTES) {
-                $this->always[$position] = true;
-            } else {
-                $this->byMarker['id:' . $id][] = $position;
-            }
+            $this->byMarker['id:' . $id][] = $position;
         }
     }
 
@@ -107,8 +103,45 @@ final class QueryPlan
         if ($this->byMarker === null
             || (int) ini_get('pcre.backtrack_limit') < 1000000
             || (int) ini_get('pcre.recursion_limit') < 100000
+            || (int) ini_get('pcre.backtrack_limit') > 4294967295
+            || (int) ini_get('pcre.recursion_limit') > 4294967295
         ) {
             return $this->restoreSequentially($name);
+        }
+
+        $context = self::pcreContext();
+        if ($this->classifiedContext === $context) {
+            return $this->restoreIndexed($name, $context);
+        }
+        return $this->classifyWhileRestoring($name, $context);
+    }
+
+    private function restoreIndexed(string $name, string $context): string
+    {
+        // Leading failures can expose the incoming error to warning handlers.
+        // Execute that prefix through its first success before discovery. If
+        // the first rule is safe, discovery resets the error just as it would.
+        $after = -1;
+        if (isset($this->always[0])) {
+            foreach ($this->restorations as $position => $restoration) {
+                $restored = preg_replace_callback(
+                    $restoration['pattern'],
+                    static fn (array $matches): string => $matches[1] ?? $restoration['original'],
+                    $name,
+                );
+                $after = $position;
+                if (!self::contextIsCurrent($context) || ($restored === null && !isset($this->always[$position]))) {
+                    $this->classifiedContext = null;
+                    return $this->restoreSequentially($restored ?? $name, $position + 1);
+                }
+                if (is_string($restored)) {
+                    $name = $restored;
+                    break;
+                }
+            }
+        }
+        if ($after === count($this->restorations) - 1) {
+            return $name;
         }
 
         $originalName = $name;
@@ -116,17 +149,19 @@ final class QueryPlan
         $pending = new \SplMinHeap();
         $scheduled = [];
 
-        if (count($this->always) > 0) {
-            foreach (array_merge(array_keys($this->always), [count($this->restorations) - 1]) as $position) {
-                if (!isset($scheduled[$position])) {
-                    $scheduled[$position] = true;
-                    $pending->insert($position);
+        foreach ($this->always as $position => $_) {
+            // A following successful rule resets the error before the next
+            // warning, even when its template is absent from this name.
+            foreach ([$position, $position + 1] as $required) {
+                if ($required > $after && $required < count($this->restorations) && !isset($scheduled[$required])) {
+                    $scheduled[$required] = true;
+                    $pending->insert($required);
                 }
             }
         }
 
-        if (!$this->scheduleCandidates($name, -1, $pending, $scheduled)) {
-            return $this->restoreSequentially($originalName);
+        if (!$this->scheduleCandidates($name, $after, $pending, $scheduled)) {
+            return $this->restoreSequentially($originalName, $after + 1);
         }
 
         while (!$pending->isEmpty()) {
@@ -138,10 +173,18 @@ final class QueryPlan
                 $name,
             );
 
+            // A warning handler can change PCRE settings or the locale. The
+            // remaining original calls must observe those changes immediately.
+            if (!self::contextIsCurrent($context)) {
+                $this->classifiedContext = null;
+                return $this->restoreSequentially($restored ?? $name, $position + 1);
+            }
+
             if ($restored === null) {
                 if (isset($this->always[$position])) {
                     continue;
                 }
+                $this->classifiedContext = null;
                 return $this->restoreSequentially($name, $position + 1);
             }
 
@@ -158,6 +201,48 @@ final class QueryPlan
             }
         }
 
+        return $name;
+    }
+
+    private static function contextIsCurrent(string $context): bool
+    {
+        return self::pcreContext() === $context;
+    }
+
+    private static function pcreContext(): string
+    {
+        return setlocale(LC_CTYPE, '0') . "\0" . ini_get('pcre.jit') . "\0"
+            . ini_get('pcre.backtrack_limit') . "\0" . ini_get('pcre.recursion_limit');
+    }
+
+    /**
+     * Learn compilation failures during the first real ordered pass. A hidden
+     * probe could consume a one-time JIT warning and change the engine cache.
+     * Actual replacements preserve warning delivery and the final error state.
+     */
+    private function classifyWhileRestoring(string $name, string $context): string
+    {
+        $always = [];
+        foreach ($this->restorations as $position => $restoration) {
+            $restored = preg_replace_callback(
+                $restoration['pattern'],
+                static fn (array $matches): string => $matches[1] ?? $restoration['original'],
+                $name,
+            );
+            if ($restored === null) {
+                $always[$position] = true;
+            } else {
+                $name = $restored;
+            }
+
+            if (!self::contextIsCurrent($context)) {
+                $this->classifiedContext = null;
+                return $this->restoreSequentially($name, $position + 1);
+            }
+        }
+
+        $this->always = $always;
+        $this->classifiedContext = $context;
         return $name;
     }
 
@@ -182,13 +267,12 @@ final class QueryPlan
      */
     private function scheduleCandidates(string $name, int $after, \SplMinHeap $pending, array &$scheduled): bool
     {
-        $count = preg_match_all('/\/\* type-db:float-rewrite-([0-9]+) \*\//i', $name, $matches);
-
-        if ($count === false) {
-            return false;
-        }
-
-        foreach ($matches[1] as $id) {
+        // Stream markers so unknown/repeated IDs do not allocate an array
+        // proportional to the number of occurrences in a large subject.
+        $offset = 0;
+        while (($count = preg_match('/\/\* type-db:float-rewrite-([0-9]+) \*\//i', $name, $matches, PREG_OFFSET_CAPTURE, $offset)) === 1) {
+            $id = $matches[1][0];
+            $offset = $matches[0][1] + strlen($matches[0][0]);
             foreach ($this->byMarker['id:' . $id] ?? [] as $position) {
                 if ($position > $after && !isset($scheduled[$position])) {
                     $scheduled[$position] = true;
@@ -197,6 +281,12 @@ final class QueryPlan
             }
         }
 
+        if ($count === false) {
+            // Discovery began with NO_ERROR. Its own failure must not leak
+            // into a subsequent original warning handler during fallback.
+            preg_match('//', '');
+            return false;
+        }
         return true;
     }
 
