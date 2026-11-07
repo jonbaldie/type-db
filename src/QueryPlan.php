@@ -14,8 +14,16 @@ namespace TypeDb;
  */
 final class QueryPlan
 {
-    /** @var list<array{pattern: string, original: string}> */
+    private const MAX_INDEXED_PATTERN_BYTES = 1024;
+
+    /** @var list<array{pattern: string, original: string, mayCreateMarker: bool}> */
     private array $restorations = [];
+
+    /** @var array<string, list<int>>|null */
+    private ?array $byMarker = [];
+
+    /** @var array<int, true> */
+    private array $always = [];
 
     /**
      * Build plans with SqlRewriter::rewrite() or QueryPlan::unchanged().
@@ -37,7 +45,32 @@ final class QueryPlan
             }
 
             $seen[$key] = true;
-            $this->restorations[] = self::restoration($rewrite['rewritten'], $rewrite['original']);
+            $restoration = self::restoration($rewrite['rewritten'], $rewrite['original']);
+            $restoration['mayCreateMarker'] = self::mayCreateMarker($rewrite['original']);
+            $position = count($this->restorations);
+            $this->restorations[] = $restoration;
+
+            if ($this->byMarker === null) {
+                continue;
+            }
+
+            $prefix = 'CAST(' . $rewrite['original'] . ' AS REAL) /* type-db:float-rewrite-';
+            $id = substr($rewrite['rewritten'], strlen($prefix), -3);
+
+            if (!str_starts_with($rewrite['rewritten'], $prefix)
+                || !str_ends_with($rewrite['rewritten'], ' */')
+                || $id === ''
+                || strspn($id, '0123456789') < strlen($id)
+            ) {
+                $this->byMarker = null;
+                continue;
+            }
+
+            if (strlen($restoration['pattern']) > self::MAX_INDEXED_PATTERN_BYTES) {
+                $this->always[$position] = true;
+            } else {
+                $this->byMarker['id:' . $id][] = $position;
+            }
         }
     }
 
@@ -67,7 +100,110 @@ final class QueryPlan
      */
     public function restoreColumnName(string $name): string
     {
-        foreach ($this->restorations as $restoration) {
+        if ($this->restorations === []) {
+            return $name;
+        }
+
+        if ($this->byMarker === null
+            || (int) ini_get('pcre.backtrack_limit') < 1000000
+            || (int) ini_get('pcre.recursion_limit') < 100000
+        ) {
+            return $this->restoreSequentially($name);
+        }
+
+        $originalName = $name;
+        /** @var \SplMinHeap<int> $pending */
+        $pending = new \SplMinHeap();
+        $scheduled = [];
+
+        if (count($this->always) > 0) {
+            foreach (array_merge(array_keys($this->always), [count($this->restorations) - 1]) as $position) {
+                if (!isset($scheduled[$position])) {
+                    $scheduled[$position] = true;
+                    $pending->insert($position);
+                }
+            }
+        }
+
+        if (!$this->scheduleCandidates($name, -1, $pending, $scheduled)) {
+            return $this->restoreSequentially($originalName);
+        }
+
+        while (!$pending->isEmpty()) {
+            $position = $pending->extract();
+            $restoration = $this->restorations[$position];
+            $restored = preg_replace_callback(
+                $restoration['pattern'],
+                static fn (array $matches): string => $matches[1] ?? $restoration['original'],
+                $name,
+            );
+
+            if ($restored === null) {
+                if (isset($this->always[$position])) {
+                    continue;
+                }
+                return $this->restoreSequentially($name, $position + 1);
+            }
+
+            if ($restored === $name) {
+                continue;
+            }
+
+            $name = $restored;
+
+            if ($restoration['mayCreateMarker'] && $position < count($this->restorations) - 1
+                && !$this->scheduleCandidates($name, $position, $pending, $scheduled)
+            ) {
+                return $this->restoreSequentially($name, $position + 1);
+            }
+        }
+
+        return $name;
+    }
+
+    private static function mayCreateMarker(string $parameter): bool
+    {
+        if (str_starts_with($parameter, '?')
+            && strspn($parameter, '0123456789', 1) === strlen($parameter) - 1
+        ) {
+            return false;
+        }
+
+        return !(strlen($parameter) > 1
+            && $parameter[0] === ':'
+            && !in_array($parameter[1], ['f', 'F'], true)
+            && strspn($parameter, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$', 1) === strlen($parameter) - 1
+        );
+    }
+
+    /**
+     * @param \SplMinHeap<int> $pending
+     * @param array<int, true> $scheduled
+     */
+    private function scheduleCandidates(string $name, int $after, \SplMinHeap $pending, array &$scheduled): bool
+    {
+        $count = preg_match_all('/\/\* type-db:float-rewrite-([0-9]+) \*\//i', $name, $matches);
+
+        if ($count === false) {
+            return false;
+        }
+
+        foreach ($matches[1] as $id) {
+            foreach ($this->byMarker['id:' . $id] ?? [] as $position) {
+                if ($position > $after && !isset($scheduled[$position])) {
+                    $scheduled[$position] = true;
+                    $pending->insert($position);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private function restoreSequentially(string $name, int $start = 0): string
+    {
+        for ($position = $start; $position < count($this->restorations); $position++) {
+            $restoration = $this->restorations[$position];
             $name = preg_replace_callback(
                 $restoration['pattern'],
                 static fn (array $matches): string => $matches[1] ?? $restoration['original'],
