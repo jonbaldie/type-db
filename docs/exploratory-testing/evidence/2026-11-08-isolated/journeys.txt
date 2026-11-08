@@ -1,0 +1,36 @@
+RUN 1
+created rows: [{"id":1,"name":"bar","amount":1.25,"storage":"real"},{"id":2,"name":"baz","amount":null,"storage":"null"}]
+reopened rows: [{"id":1,"name":"bar","amount":1.25},{"id":2,"name":"baz","amount":null}]
+named repeated float: [{"n":2.5,"kind":"real","plus":3.5}]
+numbered float names: [{"?2":3.5,"?1":"text"}]
+case and float names: [{":AMOUNT":1.5,"ALIAS":4.5}]
+mismatched binding rejected: "InvalidArgumentException"
+null and empty remain distinct: [{"n":null,"empty":""}]
+null attribute restored: 2
+duplicate rejected: "RuntimeException"
+failed write unchanged: [{"n":2}]
+corrected write persists: [{"name":"fixed"}]
+RUN 2
+created rows: [{"id":1,"name":"bar","amount":1.25,"storage":"real"},{"id":2,"name":"baz","amount":null,"storage":"null"}]
+reopened rows: [{"id":1,"name":"bar","amount":1.25},{"id":2,"name":"baz","amount":null}]
+named repeated float: [{"n":2.5,"kind":"real","plus":3.5}]
+numbered float names: [{"?2":3.5,"?1":"text"}]
+case and float names: [{":AMOUNT":1.5,"ALIAS":4.5}]
+mismatched binding rejected: "InvalidArgumentException"
+null and empty remain distinct: [{"n":null,"empty":""}]
+null attribute restored: 2
+duplicate rejected: "RuntimeException"
+failed write unchanged: [{"n":2}]
+corrected write persists: [{"name":"fixed"}]
+RUN 3
+created rows: [{"id":1,"name":"bar","amount":1.25,"storage":"real"},{"id":2,"name":"baz","amount":null,"storage":"null"}]
+reopened rows: [{"id":1,"name":"bar","amount":1.25},{"id":2,"name":"baz","amount":null}]
+named repeated float: [{"n":2.5,"kind":"real","plus":3.5}]
+numbered float names: [{"?2":3.5,"?1":"text"}]
+case and float names: [{":AMOUNT":1.5,"ALIAS":4.5}]
+mismatched binding rejected: "InvalidArgumentException"
+null and empty remain distinct: [{"n":null,"empty":""}]
+null attribute restored: 2
+duplicate rejected: "RuntimeException"
+failed write unchanged: [{"n":2}]
+corrected write persists: [{"name":"fixed"}]
