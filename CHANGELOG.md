@@ -6,6 +6,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). This pr
 
 ## [Unreleased]
 
+## [v0.13.1] — 2026-11-09
+
+### Changed
+- Index SQLite float rewrite markers when restoring result column names, reducing repeated scans while preserving the ordered compatibility path (#90, #94).
+
+### Documentation
+- Record SQLite consumer journey testing and an isolated repeat (#95, #96).
+
 ## [v0.13.0] — 2026-11-01
 
 ### Changed
